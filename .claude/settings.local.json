@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(/c/Users/JanisLocher/AppData/Roaming/nvm/v22.11.0/npm.cmd run build)",
+      "Bash(cmd.exe /c \"where node && where npm\")",
+      "Bash(cmd.exe /c \"npx vite build\")"
+    ]
+  }
+}
