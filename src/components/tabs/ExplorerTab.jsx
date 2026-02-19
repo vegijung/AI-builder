@@ -9,7 +9,7 @@ import { ExplorerSidebar } from './ExplorerSidebar';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { theme } from '../../styles/theme';
 
-export function ExplorerTab({ searchNavigation, compareState }) {
+export function ExplorerTab({ searchNavigation, compareState, roadmapState }) {
   const [selectedArea, setSelectedArea] = useState(null);
   const [selectedBlock, setSelectedBlock] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -124,6 +124,8 @@ export function ExplorerTab({ searchNavigation, compareState }) {
               showCompare={!!compareState}
               isCompareSelected={compareState?.isSelected(uc.name)}
               onCompareToggle={compareState?.toggleCompare}
+              onAddToRoadmap={roadmapState?.addToRoadmap}
+              isInRoadmap={roadmapState?.isInRoadmap(uc.name)}
             />
           ))}
         </div>

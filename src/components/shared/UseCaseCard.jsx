@@ -7,7 +7,7 @@ import { MaturityBadge } from './MaturityBadge';
 import { BuildingBlockTag } from './BuildingBlockTag';
 import { theme } from '../../styles/theme';
 
-export function UseCaseCard({ useCase, index = 0, expandable = true, highlightedBlock, highlightedCategories, onCompareToggle, isCompareSelected, showCompare }) {
+export function UseCaseCard({ useCase, index = 0, expandable = true, highlightedBlock, highlightedCategories, onCompareToggle, isCompareSelected, showCompare, onAddToRoadmap, isInRoadmap }) {
   const [expanded, setExpanded] = useState(false);
   const [hovered, setHovered] = useState(false);
   const avg = getUseCaseAvgMaturity(useCase);
@@ -125,6 +125,22 @@ export function UseCaseCard({ useCase, index = 0, expandable = true, highlighted
               ))}
             </div>
             <MaturityBadge avg={avg} />
+            {onAddToRoadmap && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onAddToRoadmap(useCase); }}
+                disabled={isInRoadmap}
+                style={{
+                  padding: '4px 10px', borderRadius: theme.radii.lg, border: '1px solid ' + (isInRoadmap ? theme.colors.activityPrimary : theme.colors.borderMedium),
+                  background: isInRoadmap ? theme.colors.activityPrimary + '15' : theme.colors.surface,
+                  color: isInRoadmap ? theme.colors.activityPrimary : theme.colors.textTertiary,
+                  fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.semibold,
+                  cursor: isInRoadmap ? 'default' : 'pointer', fontFamily: 'inherit',
+                  transition: `all ${theme.transitions.fast}`,
+                }}
+              >
+                {isInRoadmap ? '\u2713 In Roadmap' : '+ Roadmap'}
+              </button>
+            )}
           </div>
         </div>
       )}

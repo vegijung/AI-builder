@@ -31,7 +31,7 @@ export function TabBar({ tabs, activeTab, onTabChange }) {
       ref={containerRef}
       role="tablist"
       onKeyDown={handleKeyDown}
-      style={{ display: 'flex', marginBottom: theme.spacing.xxl, borderBottom: '1px solid ' + theme.colors.borderSubtle, position: 'relative' }}
+      style={{ display: 'flex', marginBottom: theme.spacing.xxl, borderBottom: '1px solid ' + theme.colors.borderSubtle, position: 'relative', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}
     >
       {tabs.map(tab => {
         const isActive = activeTab === tab.id;

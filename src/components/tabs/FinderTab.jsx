@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { USE_CASES } from '../../data/useCases';
 import { CATEGORIES, CATEGORY_NAMES } from '../../data/categories';
 import { VALUE_CHAIN_AREAS, VALUE_CHAIN_SHORT_LABELS } from '../../data/constants';
@@ -13,12 +13,20 @@ import { MATURITY_LABELS, MATURITY_COLORS } from '../../data/constants';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { theme } from '../../styles/theme';
 
-export function FinderTab() {
+export function FinderTab({ roadmapState, assessmentState }) {
   const [selectedAreas, setSelectedAreas] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [minimumMaturity, setMinimumMaturity] = useState(0);
   const [showResults, setShowResults] = useState(false);
+  const [prefilled, setPrefilled] = useState(false);
   const { isMobile } = useBreakpoint();
+
+  useEffect(() => {
+    if (!prefilled && assessmentState?.isComplete && assessmentState.selectedAreas.length > 0) {
+      setSelectedAreas(assessmentState.selectedAreas);
+      setPrefilled(true);
+    }
+  }, [assessmentState?.isComplete, assessmentState?.selectedAreas, prefilled]);
 
   const results = useMemo(() => {
     if (!showResults) return [];
@@ -101,6 +109,23 @@ export function FinderTab() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textDisabled }}>{VALUE_CHAIN_SHORT_LABELS[uc.valueChainArea]}</span>
                         <MaturityBadge avg={r.avgMaturity} />
+                        {roadmapState && (
+                          <button
+                            onClick={() => roadmapState.addToRoadmap(uc)}
+                            disabled={roadmapState.isInRoadmap(uc.name)}
+                            style={{
+                              padding: '3px 8px', borderRadius: theme.radii.lg,
+                              border: '1px solid ' + (roadmapState.isInRoadmap(uc.name) ? theme.colors.activityPrimary : theme.colors.borderMedium),
+                              background: roadmapState.isInRoadmap(uc.name) ? theme.colors.activityPrimary + '15' : theme.colors.surface,
+                              color: roadmapState.isInRoadmap(uc.name) ? theme.colors.activityPrimary : theme.colors.textTertiary,
+                              fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.semibold,
+                              cursor: roadmapState.isInRoadmap(uc.name) ? 'default' : 'pointer', fontFamily: 'inherit',
+                              transition: `all ${theme.transitions.fast}`,
+                            }}
+                          >
+                            {roadmapState.isInRoadmap(uc.name) ? '\u2713 In Roadmap' : '+ Roadmap'}
+                          </button>
+                        )}
                       </div>
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>

@@ -28,11 +28,30 @@
         to { opacity: 1; transform: scale(1); }
       }
 
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+      }
+      @keyframes matrixDot {
+        from { opacity: 0; transform: scale(0); }
+        to { opacity: 1; transform: scale(1); }
+      }
+
       /* Scrollbar styling */
       ::-webkit-scrollbar { width: 6px; }
       ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb { background: #d0ccc8; border-radius: 3px; }
       ::-webkit-scrollbar-thumb:hover { background: #b0aca8; }
+
+      /* Print styles */
+      @media print {
+        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        button, [role="tablist"], header > div:last-child { display: none !important; }
+        main { max-height: none !important; overflow: visible !important; }
+        main > div { max-height: none !important; overflow: visible !important; }
+        div[style*="overflowY"] { max-height: none !important; overflow: visible !important; }
+        div[style*="position: fixed"] { display: none !important; }
+      }
     </style>
   </head>
   <body>
