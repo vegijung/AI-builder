@@ -11,6 +11,34 @@ const INDUSTRIES = [
 const COMPANY_SIZES = ['1-50', '51-200', '201-1,000', '1,001-5,000', '5,000+'];
 
 const BOOKING_URL = import.meta.env.VITE_BOOKING_URL || null;
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+async function sendEmailNotification(leadData) {
+  if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) return;
+  try {
+    await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service_id: EMAILJS_SERVICE_ID,
+        template_id: EMAILJS_TEMPLATE_ID,
+        user_id: EMAILJS_PUBLIC_KEY,
+        template_params: {
+          lead_name: leadData.name,
+          lead_email: leadData.email,
+          lead_company: leadData.company,
+          lead_industry: leadData.industry || 'Not specified',
+          lead_company_size: leadData.companySize || 'Not specified',
+          lead_score: leadData.overallScore?.toFixed(1) || '—',
+        },
+      }),
+    });
+  } catch {
+    // Email notification is best-effort; don't block the user flow
+  }
+}
 
 const inputStyle = {
   width: '100%', padding: '10px 12px', borderRadius: theme.radii.lg,
@@ -41,7 +69,7 @@ export function LeadCaptureCard({ selectedAreas, areaRatings, readinessRatings, 
     setSubmitting(true);
     setError(null);
     try {
-      await submitAssessmentLead({
+      const leadData = {
         name: form.name.trim(),
         email: form.email.trim().toLowerCase(),
         company: form.company.trim(),
@@ -51,7 +79,9 @@ export function LeadCaptureCard({ selectedAreas, areaRatings, readinessRatings, 
         areaRatings,
         readinessRatings,
         overallScore,
-      });
+      };
+      await submitAssessmentLead(leadData);
+      sendEmailNotification(leadData);
       onLeadSubmitted();
     } catch (err) {
       setError(err.message);
