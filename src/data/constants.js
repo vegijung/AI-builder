@@ -79,6 +79,16 @@ export const ADOPTION_LEVELS = [
   { score: 5, label: 'Optimized', description: 'AI deeply embedded, continuously improving' },
 ];
 
+export const CATEGORY_READINESS_MAP = {
+  'Understanding & Summarization': { dims: ['data', 'infra'], reason: 'Summarization and search AI relies on well-structured, accessible data and integration with existing systems.' },
+  'Extraction & Structuring': { dims: ['data'], reason: 'Extraction AI needs clean, well-governed data sources to produce reliable results.' },
+  'Generation & Creativity': { dims: ['infra', 'talent'], reason: 'Generative AI requires scalable compute infrastructure and teams ready to adopt new creative workflows.' },
+  'Prediction & Optimization': { dims: ['data', 'infra'], reason: 'Predictive models depend on high-quality historical data and robust compute infrastructure.' },
+  'Interaction & Assistance': { dims: ['data', 'talent'], reason: 'Conversational AI needs a solid knowledge base and organization-wide readiness to adopt new interaction patterns.' },
+  'Automation & Execution': { dims: ['infra', 'talent'], reason: 'Automation requires strong system integration and change management capacity across teams.' },
+  'Coding & Development': { dims: ['infra', 'talent'], reason: 'AI development tools need modern toolchains and technical teams ready to integrate them.' },
+};
+
 export const ROADMAP_PHASES = [
   { id: 'quickWins', label: 'Quick Wins', timeframe: '0-3 months', description: 'High maturity, immediate value', color: '#50D8A8' },
   { id: 'mediumTerm', label: 'Medium Term', timeframe: '3-12 months', description: 'Builds on quick wins', color: '#5BC8D4' },
