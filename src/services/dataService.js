@@ -199,12 +199,22 @@ export async function deleteUseCase(name) {
   if (error) throw error;
 }
 
+// Deduplicate array by name, keeping the last occurrence
+function dedupeByName(arr) {
+  const map = new Map();
+  arr.forEach(item => map.set(item.name, item));
+  return [...map.values()];
+}
+
 // Bulk sync from Excel upload
 export async function syncFromExcel(buildingBlocks, useCases) {
   const result = { blocksUpserted: 0, useCasesUpserted: 0, blocksRemoved: 0, useCasesRemoved: 0 };
 
+  const dedupedBBs = dedupeByName(buildingBlocks);
+  const dedupedUCs = dedupeByName(useCases);
+
   // 1. Upsert building blocks
-  const bbRows = buildingBlocks.map((b, i) => ({
+  const bbRows = dedupedBBs.map((b, i) => ({
     name: b.name,
     category: b.category,
     maturity: b.maturity,
@@ -219,7 +229,7 @@ export async function syncFromExcel(buildingBlocks, useCases) {
   }
 
   // 2. Upsert use cases
-  const ucRows = useCases.map((uc, i) => ({
+  const ucRows = dedupedUCs.map((uc, i) => ({
     name: uc.name,
     activity_type: uc.activityType,
     value_chain_area: uc.valueChainArea,
@@ -241,7 +251,7 @@ export async function syncFromExcel(buildingBlocks, useCases) {
     await supabase.from('use_case_blocks').delete().in('use_case_id', ucIds);
 
     const blockRows = [];
-    useCases.forEach(uc => {
+    dedupedUCs.forEach(uc => {
       const ucId = ucIdMap[uc.name];
       if (ucId && uc.buildingBlocks?.length > 0) {
         uc.buildingBlocks.forEach(blockName => {
@@ -256,7 +266,7 @@ export async function syncFromExcel(buildingBlocks, useCases) {
   }
 
   // 4. Delete use cases not in Excel
-  const excelUCNames = useCases.map(uc => uc.name);
+  const excelUCNames = dedupedUCs.map(uc => uc.name);
   const { data: allDBUCs } = await supabase.from('use_cases').select('name');
   if (allDBUCs) {
     const toDeleteUCs = allDBUCs.filter(uc => !excelUCNames.includes(uc.name)).map(uc => uc.name);
@@ -267,7 +277,7 @@ export async function syncFromExcel(buildingBlocks, useCases) {
   }
 
   // 5. Delete building blocks not in Excel
-  const excelBBNames = buildingBlocks.map(b => b.name);
+  const excelBBNames = dedupedBBs.map(b => b.name);
   const { data: allDBBBs } = await supabase.from('building_blocks').select('name');
   if (allDBBBs) {
     const toDeleteBBs = allDBBBs.filter(b => !excelBBNames.includes(b.name)).map(b => b.name);
