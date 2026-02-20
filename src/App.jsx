@@ -9,13 +9,11 @@ import { RoadmapTab } from './components/tabs/RoadmapTab';
 import { GlobalSearch } from './components/search/GlobalSearch';
 import { ComparePanel } from './components/compare/ComparePanel';
 import { CompareFloatingButton } from './components/compare/CompareFloatingButton';
-import { WorkshopBanner } from './components/workshop/WorkshopBanner';
 import { AdminOverlay } from './components/admin/AdminOverlay';
 import { useSearch } from './hooks/useSearch';
 import { useCompare } from './hooks/useCompare';
 import { useAssessment } from './hooks/useAssessment';
 import { useRoadmap } from './hooks/useRoadmap';
-import { useWorkshop } from './hooks/useWorkshop';
 import { useAuth } from './hooks/useAuth';
 import { useBreakpoint } from './hooks/useBreakpoint';
 import { theme } from './styles/theme';
@@ -35,21 +33,12 @@ function AppContent() {
   const compare = useCompare();
   const assessment = useAssessment();
   const roadmap = useRoadmap();
-  const workshop = useWorkshop();
   const auth = useAuth();
   const { isMobile } = useBreakpoint();
 
   const handleSearchNavigate = useCallback((nav) => {
     setActiveTab(nav.tab);
     setSearchNavigation({ ...nav.filter, _ts: Date.now() });
-  }, []);
-
-  const handleStartWorkshop = useCallback(() => {
-    workshop.openWorkshop();
-  }, [workshop]);
-
-  const handleWorkshopNavigate = useCallback((tab) => {
-    setActiveTab(tab);
   }, []);
 
   const tabsWithBadge = TABS.map(tab => {
@@ -90,16 +79,6 @@ function AppContent() {
         isAdmin={auth.isAdmin}
       />
 
-      {workshop.isActive && (
-        <WorkshopBanner
-          workshop={workshop}
-          assessment={assessment}
-          roadmap={roadmap}
-          activeTab={activeTab}
-          onNavigate={handleWorkshopNavigate}
-        />
-      )}
-
       <TabBar tabs={tabsWithBadge} activeTab={activeTab} onTabChange={setActiveTab} />
 
       <main style={{ animation: 'fadeIn 0.25s ease-out' }} key={activeTab}>
@@ -119,7 +98,7 @@ function AppContent() {
         )}
       </main>
 
-      <Footer onStartWorkshop={handleStartWorkshop} workshopActive={workshop.isActive} />
+      <Footer />
 
       {activeTab === 'explore' && (
         <CompareFloatingButton

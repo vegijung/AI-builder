@@ -319,6 +319,8 @@ function RecommendationCard({ rec, index, readinessScore, areaRatings, prioritie
 // ---------------------------------------------------------------------------
 export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isMobile, selectedAreas, priorities, companyProfile, leadSubmitted, onLeadSubmitted }) {
   const { valueChainShortLabels, useCases, buildingBlockMap } = useData();
+  const [showReadinessDetail, setShowReadinessDetail] = useState(false);
+  const [showGapAnalysis, setShowGapAnalysis] = useState(false);
 
   const gaps = useMemo(() => computeGapAnalysis(areaRatings, useCases, buildingBlockMap), [areaRatings, useCases, buildingBlockMap]);
   const readinessScore = useMemo(() => computeReadinessScore(readinessRatings), [readinessRatings]);
@@ -334,17 +336,69 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isM
 
   const overallReadiness = getMaturityLevel(readinessScore);
 
+  const toggleBtnStyle = {
+    display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px',
+    borderRadius: theme.radii.lg, border: '1px solid ' + theme.colors.borderMedium,
+    background: theme.colors.surface, color: theme.colors.textTertiary,
+    fontSize: theme.typography.sizes.sm, fontWeight: theme.typography.weights.semibold,
+    cursor: 'pointer', fontFamily: 'inherit', transition: `all ${theme.transitions.fast}`,
+    marginBottom: 16,
+  };
+
   return (
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
       <ProfileSummary companyProfile={companyProfile} priorities={priorities} />
 
-      {/* Executive summary */}
       <ExecutiveSummary items={execSummary} />
 
-      {/* Readiness + Gap side-by-side */}
-      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 24, marginBottom: 28 }}>
-        <div style={{ flex: 1 }}>
-          <SectionLabel>Readiness Overview</SectionLabel>
+      <LeadCaptureCard
+        selectedAreas={selectedAreas || Object.keys(areaRatings)}
+        areaRatings={areaRatings}
+        readinessRatings={readinessRatings}
+        overallScore={readinessScore}
+        companyProfile={companyProfile}
+        priorities={priorities}
+        leadSubmitted={leadSubmitted}
+        onLeadSubmitted={onLeadSubmitted}
+      />
+
+      <SectionLabel>Recommended Starting Points</SectionLabel>
+      <p style={{ fontSize: theme.typography.sizes.lg, color: theme.colors.textTertiary, marginBottom: 12, marginTop: 0 }}>
+        Use cases best matched to your current maturity, readiness, and strategic priorities. Click any card to see why it was recommended.
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 28 }}>
+        {recommendations.map((rec, i) => (
+          <RecommendationCard
+            key={rec.useCase.name}
+            rec={rec}
+            index={i}
+            readinessScore={readinessScore}
+            areaRatings={areaRatings}
+            priorities={priorities}
+            dimensionScores={dimensionScores}
+            valueChainShortLabels={valueChainShortLabels}
+            onAddToRoadmap={onAddToRoadmap}
+            buildingBlockMap={buildingBlockMap}
+          />
+        ))}
+      </div>
+
+      {/* Collapsible: Readiness Overview */}
+      <button
+        onClick={() => setShowReadinessDetail(!showReadinessDetail)}
+        style={toggleBtnStyle}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = theme.colors.primary; e.currentTarget.style.color = theme.colors.primaryDark; }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = theme.colors.borderMedium; e.currentTarget.style.color = theme.colors.textTertiary; }}
+      >
+        <span style={{
+          transition: `transform ${theme.transitions.fast}`,
+          transform: showReadinessDetail ? 'rotate(180deg)' : 'rotate(0)',
+          fontSize: theme.typography.sizes.sm,
+        }}>&#9660;</span>
+        {showReadinessDetail ? 'Hide' : 'Show'} Readiness Details ({readinessScore.toFixed(1)}/5)
+      </button>
+      {showReadinessDetail && (
+        <div style={{ marginBottom: 28, animation: 'fadeIn 0.2s ease-out' }}>
           <div style={{
             background: theme.colors.surface, border: '1px solid ' + theme.colors.border, borderRadius: theme.radii.xl,
             padding: 20, boxShadow: theme.shadows.card,
@@ -359,8 +413,24 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isM
             <ReadinessBreakdown readinessRatings={readinessRatings} dimensionScores={dimensionScores} />
           </div>
         </div>
-        <div style={{ flex: 1 }}>
-          <SectionLabel>Gap Analysis by Area</SectionLabel>
+      )}
+
+      {/* Collapsible: Gap Analysis */}
+      <button
+        onClick={() => setShowGapAnalysis(!showGapAnalysis)}
+        style={toggleBtnStyle}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = theme.colors.primary; e.currentTarget.style.color = theme.colors.primaryDark; }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = theme.colors.borderMedium; e.currentTarget.style.color = theme.colors.textTertiary; }}
+      >
+        <span style={{
+          transition: `transform ${theme.transitions.fast}`,
+          transform: showGapAnalysis ? 'rotate(180deg)' : 'rotate(0)',
+          fontSize: theme.typography.sizes.sm,
+        }}>&#9660;</span>
+        {showGapAnalysis ? 'Hide' : 'Show'} Gap Analysis by Area
+      </button>
+      {showGapAnalysis && (
+        <div style={{ marginBottom: 28, animation: 'fadeIn 0.2s ease-out' }}>
           <div style={{
             background: theme.colors.surface, border: '1px solid ' + theme.colors.border, borderRadius: theme.radii.xl,
             padding: 20, boxShadow: theme.shadows.card,
@@ -410,39 +480,7 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isM
             </div>
           </div>
         </div>
-      </div>
-
-      <LeadCaptureCard
-        selectedAreas={selectedAreas || Object.keys(areaRatings)}
-        areaRatings={areaRatings}
-        readinessRatings={readinessRatings}
-        overallScore={readinessScore}
-        companyProfile={companyProfile}
-        priorities={priorities}
-        leadSubmitted={leadSubmitted}
-        onLeadSubmitted={onLeadSubmitted}
-      />
-
-      <SectionLabel>Recommended Starting Points</SectionLabel>
-      <p style={{ fontSize: theme.typography.sizes.lg, color: theme.colors.textTertiary, marginBottom: 12, marginTop: 0 }}>
-        Use cases best matched to your current maturity, readiness, and strategic priorities. Click any card to see why it was recommended.
-      </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 'calc(100vh - 400px)', overflowY: 'auto' }}>
-        {recommendations.map((rec, i) => (
-          <RecommendationCard
-            key={rec.useCase.name}
-            rec={rec}
-            index={i}
-            readinessScore={readinessScore}
-            areaRatings={areaRatings}
-            priorities={priorities}
-            dimensionScores={dimensionScores}
-            valueChainShortLabels={valueChainShortLabels}
-            onAddToRoadmap={onAddToRoadmap}
-            buildingBlockMap={buildingBlockMap}
-          />
-        ))}
-      </div>
+      )}
     </div>
   );
 }
