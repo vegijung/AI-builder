@@ -1,8 +1,9 @@
-import { BUILDING_BLOCKS } from '../../data/buildingBlocks';
-import { USE_CASES } from '../../data/useCases';
+import { useData } from '../../contexts/DataContext';
 import { theme } from '../../styles/theme';
 
 export function Header({ searchSlot, onStartWorkshop }) {
+  const { buildingBlocks, useCases } = useData();
+
   return (
     <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.xxl, flexWrap: 'wrap', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -19,7 +20,7 @@ export function Header({ searchSlot, onStartWorkshop }) {
             AI Building Blocks Framework
           </h1>
           <p style={{ margin: 0, fontSize: theme.typography.sizes.md, color: theme.colors.textFaint }}>
-            {BUILDING_BLOCKS.length} Building Blocks &middot; {USE_CASES.length} Use Cases &middot; 5-Level Maturity Model
+            {buildingBlocks.length} Building Blocks &middot; {useCases.length} Use Cases &middot; 5-Level Maturity Model
           </p>
         </div>
       </div>

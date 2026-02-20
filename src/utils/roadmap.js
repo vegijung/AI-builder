@@ -1,7 +1,7 @@
-import { getUseCaseAvgMaturity, getBlockCategory } from './maturity';
+import { getUseCaseAvgMaturity } from './maturity';
 
-export function suggestPhase(useCase) {
-  const maturity = getUseCaseAvgMaturity(useCase);
+export function suggestPhase(useCase, blockMap) {
+  const maturity = getUseCaseAvgMaturity(useCase, blockMap);
   if (maturity >= 3.8 && useCase.activityType === 'Support') return 'quickWins';
   if (maturity >= 3.5) return 'quickWins';
   if (maturity >= 2.5) return 'mediumTerm';
@@ -26,7 +26,7 @@ export function findDependencies(useCase, allSelected) {
   return deps.sort((a, b) => b.count - a.count);
 }
 
-export function generateRoadmapText(phases, shortlist) {
+export function generateRoadmapText(phases, shortlist, blockMap) {
   const lines = ['# AI Implementation Roadmap', '', `Generated: ${new Date().toLocaleDateString()}`, ''];
   const phaseLabels = { quickWins: 'Quick Wins (0-3 months)', mediumTerm: 'Medium Term (3-12 months)', strategic: 'Strategic (12+ months)' };
 
@@ -35,7 +35,7 @@ export function generateRoadmapText(phases, shortlist) {
     if (!items.length) return;
     lines.push(`## ${label}`, '');
     items.forEach(item => {
-      const maturity = getUseCaseAvgMaturity(item.useCase);
+      const maturity = getUseCaseAvgMaturity(item.useCase, blockMap);
       lines.push(`- **${item.useCase.name}** (${item.useCase.valueChainArea}) — Maturity: ${maturity.toFixed(1)}`);
       lines.push(`  Building Blocks: ${item.useCase.buildingBlocks.join(', ')}`);
     });

@@ -1,5 +1,5 @@
-import { VALUE_CHAIN_AREAS, VALUE_CHAIN_SHORT_LABELS, READINESS_DIMENSIONS, ADOPTION_LEVELS } from '../../data/constants';
-import { USE_CASES } from '../../data/useCases';
+import { READINESS_DIMENSIONS, ADOPTION_LEVELS } from '../../data/constants';
+import { useData } from '../../contexts/DataContext';
 import { SectionLabel } from '../shared/SectionLabel';
 import { GapAnalysis } from '../assessment/GapAnalysis';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
@@ -55,6 +55,7 @@ function RatingSlider({ value, onChange, labels }) {
 }
 
 export function AssessmentTab({ assessment, onAddToRoadmap }) {
+  const { useCases, valueChainAreaNames, valueChainShortLabels } = useData();
   const { isMobile } = useBreakpoint();
   const { selectedAreas, areaRatings, readinessRatings, step, isComplete,
     toggleArea, setAreaRating, setReadinessRating, setStep, completeAssessment, resetAssessment } = assessment;
@@ -90,9 +91,9 @@ export function AssessmentTab({ assessment, onAddToRoadmap }) {
             Select the value chain areas where you want to explore AI opportunities.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {VALUE_CHAIN_AREAS.map(area => {
+            {valueChainAreaNames.map(area => {
               const sel = selectedAreas.includes(area);
-              const count = USE_CASES.filter(uc => uc.valueChainArea === area).length;
+              const count = useCases.filter(uc => uc.valueChainArea === area).length;
               return (
                 <button key={area} onClick={() => toggleArea(area)} style={{
                   padding: '10px 16px', borderRadius: theme.radii.xl,
@@ -102,7 +103,7 @@ export function AssessmentTab({ assessment, onAddToRoadmap }) {
                   fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.semibold,
                   cursor: 'pointer', fontFamily: 'inherit', transition: `all ${theme.transitions.fast}`,
                 }}>
-                  {VALUE_CHAIN_SHORT_LABELS[area]} <span style={{ opacity: 0.6, fontSize: theme.typography.sizes.base }}>({count})</span>
+                  {valueChainShortLabels[area]} <span style={{ opacity: 0.6, fontSize: theme.typography.sizes.base }}>({count})</span>
                 </button>
               );
             })}
@@ -134,7 +135,7 @@ export function AssessmentTab({ assessment, onAddToRoadmap }) {
                 padding: 16, boxShadow: theme.shadows.card,
               }}>
                 <div style={{ fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, color: theme.colors.textPrimary, marginBottom: 8 }}>
-                  {VALUE_CHAIN_SHORT_LABELS[area]}
+                  {valueChainShortLabels[area]}
                 </div>
                 <RatingSlider
                   value={areaRatings[area] || 1}

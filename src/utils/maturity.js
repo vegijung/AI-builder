@@ -1,23 +1,31 @@
-import { buildingBlockMap } from '../data/buildingBlocks';
-import { CATEGORIES } from '../data/categories';
+import { buildingBlockMap as staticBlockMap } from '../data/buildingBlocks';
+import { CATEGORIES as staticCategories } from '../data/categories';
 
-export function getBlockColor(blockName) {
-  const block = buildingBlockMap[blockName];
-  return block ? (CATEGORIES[block.category]?.color || '#888') : '#888';
+// All functions accept optional data params; fall back to hardcoded data if not provided.
+// This allows gradual migration: components using useData() pass data explicitly,
+// while components not yet migrated continue to work with static imports.
+
+export function getBlockColor(blockName, blockMap, categories) {
+  const bm = blockMap || staticBlockMap;
+  const cats = categories || staticCategories;
+  const block = bm[blockName];
+  return block ? (cats[block.category]?.color || '#888') : '#888';
 }
 
-export function getBlockCategory(blockName) {
-  return buildingBlockMap[blockName]?.category || '';
+export function getBlockCategory(blockName, blockMap) {
+  const bm = blockMap || staticBlockMap;
+  return bm[blockName]?.category || '';
 }
 
-export function getBlockMaturity(blockName) {
-  return buildingBlockMap[blockName]?.maturity || 0;
+export function getBlockMaturity(blockName, blockMap) {
+  const bm = blockMap || staticBlockMap;
+  return bm[blockName]?.maturity || 0;
 }
 
-export function getUseCaseAvgMaturity(useCase) {
+export function getUseCaseAvgMaturity(useCase, blockMap) {
   const blocks = useCase.buildingBlocks;
-  if (!blocks.length) return 0;
-  return blocks.reduce((sum, name) => sum + getBlockMaturity(name), 0) / blocks.length;
+  if (!blocks || !blocks.length) return 0;
+  return blocks.reduce((sum, name) => sum + getBlockMaturity(name, blockMap), 0) / blocks.length;
 }
 
 export function getMaturityLevel(avgScore) {

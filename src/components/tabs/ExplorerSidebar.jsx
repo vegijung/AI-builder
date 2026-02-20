@@ -1,20 +1,19 @@
 import { useState, useMemo } from 'react';
-import { BUILDING_BLOCKS } from '../../data/buildingBlocks';
-import { CATEGORIES, CATEGORY_NAMES } from '../../data/categories';
-import { VALUE_CHAIN_AREAS, VALUE_CHAIN_SHORT_LABELS } from '../../data/constants';
-import { USE_CASES } from '../../data/useCases';
+import { useData } from '../../contexts/DataContext';
 import { SectionLabel } from '../shared/SectionLabel';
 import { theme } from '../../styles/theme';
 
 export function ExplorerSidebar({ selectedArea, selectedBlock, selectedCategory, filteredList, hasFilters, onAreaChange, onBlockChange, onCategoryChange, onReset }) {
+  const { buildingBlocks, categories, categoryNames, valueChainAreaNames, valueChainShortLabels, useCases } = useData();
+
   const bbByCat = useMemo(() => {
     const m = {};
-    BUILDING_BLOCKS.forEach(b => {
+    buildingBlocks.forEach(b => {
       if (!m[b.category]) m[b.category] = [];
       m[b.category].push(b);
     });
     return m;
-  }, []);
+  }, [buildingBlocks]);
 
   return (
     <div style={{ width: 300, flexShrink: 0 }}>
@@ -40,8 +39,8 @@ export function ExplorerSidebar({ selectedArea, selectedBlock, selectedCategory,
       )}
       <div style={{ marginBottom: 20 }}>
         <SectionLabel>Value Chain</SectionLabel>
-        {VALUE_CHAIN_AREAS.map(area => {
-          const totalCount = USE_CASES.filter(uc => uc.valueChainArea === area).length;
+        {valueChainAreaNames.map(area => {
+          const totalCount = useCases.filter(uc => uc.valueChainArea === area).length;
           const filteredCount = filteredList.filter(uc => uc.valueChainArea === area).length;
           const isSelected = selectedArea === area;
           return (
@@ -67,7 +66,7 @@ export function ExplorerSidebar({ selectedArea, selectedBlock, selectedCategory,
                 transition: `all ${theme.transitions.fast}`,
               }}
             >
-              <span>{VALUE_CHAIN_SHORT_LABELS[area] || area}</span>
+              <span>{valueChainShortLabels[area] || area}</span>
               <span style={{
                 fontSize: theme.typography.sizes.base,
                 fontWeight: theme.typography.weights.bold,
@@ -83,7 +82,7 @@ export function ExplorerSidebar({ selectedArea, selectedBlock, selectedCategory,
         })}
       </div>
       <SectionLabel>Building Blocks</SectionLabel>
-      {CATEGORY_NAMES.map(cat => {
+      {categoryNames.map(cat => {
         const blocks = bbByCat[cat] || [];
         const isCatSelected = selectedCategory === cat;
         return (
@@ -102,11 +101,11 @@ export function ExplorerSidebar({ selectedArea, selectedBlock, selectedCategory,
                 fontFamily: 'inherit',
               }}
             >
-              <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: theme.radii.sm, background: CATEGORIES[cat].color, opacity: isCatSelected ? 1 : 0.5, transition: `opacity ${theme.transitions.fast}` }} />
+              <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: theme.radii.sm, background: categories[cat].color, opacity: isCatSelected ? 1 : 0.5, transition: `opacity ${theme.transitions.fast}` }} />
               <span style={{
                 fontSize: theme.typography.sizes.base,
                 fontWeight: theme.typography.weights.bold,
-                color: isCatSelected ? CATEGORIES[cat].color : theme.colors.textMuted,
+                color: isCatSelected ? categories[cat].color : theme.colors.textMuted,
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
                 transition: `color ${theme.transitions.fast}`,
@@ -128,8 +127,8 @@ export function ExplorerSidebar({ selectedArea, selectedBlock, selectedCategory,
                       padding: '3px 8px',
                       borderRadius: theme.radii.md,
                       border: 'none',
-                      background: isBlockSelected ? CATEGORIES[cat].color : CATEGORIES[cat].color + '18',
-                      color: isBlockSelected ? '#fff' : CATEGORIES[cat].color,
+                      background: isBlockSelected ? categories[cat].color : categories[cat].color + '18',
+                      color: isBlockSelected ? '#fff' : categories[cat].color,
                       fontSize: theme.typography.sizes.base,
                       fontWeight: theme.typography.weights.semibold,
                       cursor: 'pointer',

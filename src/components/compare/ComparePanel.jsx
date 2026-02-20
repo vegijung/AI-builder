@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import { getUseCaseAvgMaturity, getMaturityLevel, getBlockColor, getBlockCategory } from '../../utils/maturity';
-import { CATEGORIES } from '../../data/categories';
-import { VALUE_CHAIN_SHORT_LABELS } from '../../data/constants';
+import { useData } from '../../contexts/DataContext';
 import { MaturityBadge } from '../shared/MaturityBadge';
 import { MaturityDots } from '../shared/MaturityDots';
 import { theme } from '../../styles/theme';
 
 export function ComparePanel({ useCases, onClose }) {
+  const { categories, valueChainShortLabels, buildingBlockMap } = useData();
+
   const analysis = useMemo(() => {
     const allBlocks = new Set();
     const blockSets = useCases.map(uc => new Set(uc.buildingBlocks));
@@ -58,11 +59,11 @@ export function ComparePanel({ useCases, onClose }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${useCases.length}, 1fr)`, gap: 16, marginBottom: 24 }}>
           {useCases.map(uc => {
-            const avg = getUseCaseAvgMaturity(uc);
+            const avg = getUseCaseAvgMaturity(uc, buildingBlockMap);
             const ml = getMaturityLevel(avg);
             const isPrimary = uc.activityType === 'Primary';
             const catBreakdown = uc.buildingBlocks.reduce((acc, b) => {
-              const c = getBlockCategory(b);
+              const c = getBlockCategory(b, buildingBlockMap);
               if (c) acc[c] = (acc[c] || 0) + 1;
               return acc;
             }, {});
@@ -83,7 +84,7 @@ export function ComparePanel({ useCases, onClose }) {
                   }}>
                     {uc.activityType}
                   </span>
-                  <span style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textMuted }}>{VALUE_CHAIN_SHORT_LABELS[uc.valueChainArea]}</span>
+                  <span style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textMuted }}>{valueChainShortLabels[uc.valueChainArea]}</span>
                 </div>
                 <div style={{ marginBottom: 10 }}>
                   <MaturityBadge avg={avg} />
@@ -92,7 +93,7 @@ export function ComparePanel({ useCases, onClose }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                   {uc.buildingBlocks.map(b => {
                     const isShared = analysis.shared.includes(b);
-                    const col = getBlockColor(b);
+                    const col = getBlockColor(b, buildingBlockMap, categories);
                     return (
                       <div key={b} style={{
                         display: 'flex', alignItems: 'center', gap: 6, padding: '3px 8px', borderRadius: theme.radii.md,
@@ -108,8 +109,8 @@ export function ComparePanel({ useCases, onClose }) {
                 </div>
                 <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {Object.entries(catBreakdown).sort((a, b) => b[1] - a[1]).map(([cat, count]) => (
-                    <span key={cat} style={{ fontSize: theme.typography.sizes.sm, color: CATEGORIES[cat]?.color, fontWeight: theme.typography.weights.semibold }}>
-                      {CATEGORIES[cat]?.abbr}: {count}
+                    <span key={cat} style={{ fontSize: theme.typography.sizes.sm, color: categories[cat]?.color, fontWeight: theme.typography.weights.semibold }}>
+                      {categories[cat]?.abbr}: {count}
                     </span>
                   ))}
                 </div>

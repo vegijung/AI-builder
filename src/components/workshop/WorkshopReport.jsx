@@ -2,8 +2,9 @@ import { useState, useMemo } from 'react';
 import { generateWorkshopReport, computeQuadrant, getQuadrantLabel, getQuadrantColor } from '../../utils/workshop';
 import { computeReadinessScore } from '../../utils/assessment';
 import { getUseCaseAvgMaturity, getMaturityLevel } from '../../utils/maturity';
+import { generateWorkshopHtml, openHtmlReport } from '../../utils/exportHtml';
 import { READINESS_DIMENSIONS, ROADMAP_PHASES } from '../../data/constants';
-import { VALUE_CHAIN_SHORT_LABELS } from '../../data/constants';
+import { useData } from '../../contexts/DataContext';
 import { ReadinessRadar } from '../assessment/ReadinessRadar';
 import { MaturityDots } from '../shared/MaturityDots';
 import { SectionLabel } from '../shared/SectionLabel';
@@ -13,6 +14,7 @@ import { theme } from '../../styles/theme';
 export function WorkshopReport({ workshopName, assessment, priorities, roadmapShortlist }) {
   const [copied, setCopied] = useState(false);
   const { isMobile } = useBreakpoint();
+  const { valueChainShortLabels, buildingBlockMap } = useData();
 
   const readinessScore = useMemo(() => {
     if (!assessment?.isComplete) return 0;
@@ -33,7 +35,12 @@ export function WorkshopReport({ workshopName, assessment, priorities, roadmapSh
     return grouped;
   }, [roadmapShortlist]);
 
-  const handleExport = async () => {
+  const handleExportHtml = () => {
+    const html = generateWorkshopHtml(workshopName, assessment, priorities, roadmapShortlist, buildingBlockMap);
+    openHtmlReport(html);
+  };
+
+  const handleCopyText = async () => {
     const text = generateWorkshopReport(workshopName, assessment, priorities, roadmapShortlist);
     try {
       await navigator.clipboard.writeText(text);
@@ -57,21 +64,21 @@ export function WorkshopReport({ workshopName, assessment, priorities, roadmapSh
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={handleExport} style={{
+          <button onClick={handleExportHtml} style={{
             padding: '8px 16px', borderRadius: theme.radii.lg, border: 'none',
             background: theme.colors.textPrimary, color: theme.colors.primary,
             fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.bold,
             cursor: 'pointer', fontFamily: 'inherit',
           }}>
-            {copied ? '\u2713 Copied!' : 'Export to Clipboard'}
+            Export Report
           </button>
-          <button onClick={() => window.print()} style={{
+          <button onClick={handleCopyText} style={{
             padding: '8px 16px', borderRadius: theme.radii.lg, border: '1px solid ' + theme.colors.borderStrong,
             background: theme.colors.surface, color: theme.colors.textTertiary,
             fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.semibold,
             cursor: 'pointer', fontFamily: 'inherit',
           }}>
-            Print / PDF
+            {copied ? '\u2713 Copied!' : 'Copy Text'}
           </button>
         </div>
       </div>
@@ -201,7 +208,7 @@ export function WorkshopReport({ workshopName, assessment, priorities, roadmapSh
                   {items.length === 0 ? (
                     <div style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textDisabled, fontStyle: 'italic' }}>No items</div>
                   ) : items.map(item => {
-                    const maturity = getUseCaseAvgMaturity(item.useCase);
+                    const maturity = getUseCaseAvgMaturity(item.useCase, buildingBlockMap);
                     return (
                       <div key={item.useCase.name} style={{
                         padding: '6px 0', borderBottom: '1px solid ' + theme.colors.borderLight,

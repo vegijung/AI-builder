@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { getUseCaseAvgMaturity, getMaturityLevel } from '../../utils/maturity';
 import { computeQuadrant, getQuadrantLabel, getQuadrantColor } from '../../utils/workshop';
-import { VALUE_CHAIN_SHORT_LABELS } from '../../data/constants';
+import { useData } from '../../contexts/DataContext';
 import { MaturityDots } from '../shared/MaturityDots';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { theme } from '../../styles/theme';
@@ -76,6 +76,7 @@ function Matrix({ items, priorities }) {
 
 export function PrioritizationStep({ roadmapShortlist, priorities, onSetPriority }) {
   const { isMobile } = useBreakpoint();
+  const { valueChainShortLabels, buildingBlockMap } = useData();
 
   const stats = useMemo(() => {
     const counts = { doFirst: 0, plan: 0, delegate: 0, reconsider: 0 };
@@ -112,7 +113,7 @@ export function PrioritizationStep({ roadmapShortlist, priorities, onSetPriority
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 'calc(100vh - 360px)', overflowY: 'auto', paddingRight: 4 }}>
           {roadmapShortlist.map((item, i) => {
             const uc = item.useCase;
-            const maturity = getUseCaseAvgMaturity(uc);
+            const maturity = getUseCaseAvgMaturity(uc, buildingBlockMap);
             const ml = getMaturityLevel(maturity);
             const p = priorities[uc.name] || { impact: 3, feasibility: 3 };
             const q = computeQuadrant(p.impact, p.feasibility);
@@ -139,7 +140,7 @@ export function PrioritizationStep({ roadmapShortlist, priorities, onSetPriority
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <MaturityDots score={Math.round(maturity)} size={4} />
-                    <span style={{ fontSize: theme.typography.sizes.sm, color: theme.colors.textMuted }}>{VALUE_CHAIN_SHORT_LABELS[uc.valueChainArea]}</span>
+                    <span style={{ fontSize: theme.typography.sizes.sm, color: theme.colors.textMuted }}>{valueChainShortLabels[uc.valueChainArea]}</span>
                     <span style={{
                       fontSize: theme.typography.sizes.sm, fontWeight: theme.typography.weights.semibold,
                       padding: '1px 6px', borderRadius: theme.radii.md,

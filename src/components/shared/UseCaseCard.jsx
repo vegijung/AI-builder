@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { getUseCaseAvgMaturity, getMaturityLevel, getBlockColor, getBlockMaturity, getBlockCategory } from '../../utils/maturity';
-import { CATEGORIES } from '../../data/categories';
-import { VALUE_CHAIN_SHORT_LABELS } from '../../data/constants';
+import { useData } from '../../contexts/DataContext';
 import { MaturityDots } from './MaturityDots';
 import { MaturityBadge } from './MaturityBadge';
 import { BuildingBlockTag } from './BuildingBlockTag';
@@ -10,12 +9,13 @@ import { theme } from '../../styles/theme';
 export function UseCaseCard({ useCase, index = 0, expandable = true, highlightedBlock, highlightedCategories, onCompareToggle, isCompareSelected, showCompare, onAddToRoadmap, isInRoadmap }) {
   const [expanded, setExpanded] = useState(false);
   const [hovered, setHovered] = useState(false);
-  const avg = getUseCaseAvgMaturity(useCase);
+  const { categories, buildingBlockMap, valueChainShortLabels } = useData();
+  const avg = getUseCaseAvgMaturity(useCase, buildingBlockMap);
   const ml = getMaturityLevel(avg);
   const isPrimary = useCase.activityType === 'Primary';
 
   const catBreakdown = useCase.buildingBlocks.reduce((acc, b) => {
-    const c = getBlockCategory(b);
+    const c = getBlockCategory(b, buildingBlockMap);
     if (c) acc[c] = (acc[c] || 0) + 1;
     return acc;
   }, {});
@@ -76,7 +76,7 @@ export function UseCaseCard({ useCase, index = 0, expandable = true, highlighted
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <MaturityDots score={Math.round(avg)} size={5} />
           <span style={{ fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.bold, color: ml.color }}>{avg.toFixed(1)}</span>
-          <span style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textDisabled }}>{VALUE_CHAIN_SHORT_LABELS[useCase.valueChainArea]}</span>
+          <span style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textDisabled }}>{valueChainShortLabels[useCase.valueChainArea]}</span>
           <div style={{ display: 'flex', gap: 2 }}>
             {useCase.buildingBlocks.map(b => (
               <span key={b} style={{
@@ -84,7 +84,7 @@ export function UseCaseCard({ useCase, index = 0, expandable = true, highlighted
                 width: 6,
                 height: 6,
                 borderRadius: 1,
-                background: getBlockColor(b),
+                background: getBlockColor(b, buildingBlockMap, categories),
                 opacity: highlightedBlock === b ? 1 : 0.6,
                 transition: `opacity ${theme.transitions.fast}`,
               }} />
@@ -112,15 +112,15 @@ export function UseCaseCard({ useCase, index = 0, expandable = true, highlighted
         }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
             {useCase.buildingBlocks.map(b => {
-              const hl = !highlightedCategories?.length || highlightedCategories.includes(getBlockCategory(b));
+              const hl = !highlightedCategories?.length || highlightedCategories.includes(getBlockCategory(b, buildingBlockMap));
               return <BuildingBlockTag key={b} name={b} showScore isHighlighted={hl} />;
             })}
           </div>
           <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', gap: 12 }}>
               {Object.entries(catBreakdown).sort((a, b) => b[1] - a[1]).map(([cat, count]) => (
-                <span key={cat} style={{ fontSize: theme.typography.sizes.base, color: CATEGORIES[cat]?.color, fontWeight: theme.typography.weights.semibold }}>
-                  {CATEGORIES[cat]?.abbr}: {count}
+                <span key={cat} style={{ fontSize: theme.typography.sizes.base, color: categories[cat]?.color, fontWeight: theme.typography.weights.semibold }}>
+                  {categories[cat]?.abbr}: {count}
                 </span>
               ))}
             </div>

@@ -1,8 +1,6 @@
 import { useMemo } from 'react';
-import { USE_CASES } from '../../data/useCases';
-import { BUILDING_BLOCKS } from '../../data/buildingBlocks';
-import { CATEGORIES, CATEGORY_NAMES } from '../../data/categories';
-import { MATURITY_LABELS, MATURITY_COLORS, VALUE_CHAIN_SHORT_LABELS } from '../../data/constants';
+import { useData } from '../../contexts/DataContext';
+import { MATURITY_LABELS, MATURITY_COLORS } from '../../data/constants';
 import { getUseCaseAvgMaturity, getMaturityLevel } from '../../utils/maturity';
 import { computeBlockFrequency, computeMaturityDistribution, computeCategoryStats, computeActivityStats } from '../../utils/scoring';
 import { SectionLabel } from '../shared/SectionLabel';
@@ -15,14 +13,15 @@ import { theme } from '../../styles/theme';
 
 export function DashboardTab() {
   const { isMobile, isTablet } = useBreakpoint();
+  const { useCases, buildingBlocks, categories, categoryNames, valueChainShortLabels, buildingBlockMap } = useData();
 
-  const blockFrequency = useMemo(() => computeBlockFrequency(USE_CASES), []);
-  const categoryData = useMemo(() => computeCategoryStats(USE_CASES), []);
-  const activityData = useMemo(() => computeActivityStats(USE_CASES), []);
-  const maturityBuckets = useMemo(() => computeMaturityDistribution(USE_CASES), []);
+  const blockFrequency = useMemo(() => computeBlockFrequency(useCases), [useCases]);
+  const categoryData = useMemo(() => computeCategoryStats(useCases, categoryNames, buildingBlockMap), [useCases, categoryNames, buildingBlockMap]);
+  const activityData = useMemo(() => computeActivityStats(useCases, buildingBlockMap), [useCases, buildingBlockMap]);
+  const maturityBuckets = useMemo(() => computeMaturityDistribution(useCases, buildingBlockMap), [useCases, buildingBlockMap]);
 
-  const totalMappings = USE_CASES.reduce((a, u) => a + u.buildingBlocks.length, 0);
-  const overallAvg = USE_CASES.reduce((a, u) => a + getUseCaseAvgMaturity(u), 0) / USE_CASES.length;
+  const totalMappings = useCases.reduce((a, u) => a + u.buildingBlocks.length, 0);
+  const overallAvg = useCases.reduce((a, u) => a + getUseCaseAvgMaturity(u, buildingBlockMap), 0) / useCases.length;
   const maxCategoryCount = Math.max(...Object.values(categoryData).map(d => d.count));
   const maxBlockFreq = blockFrequency[0]?.[1] || 1;
 
@@ -32,11 +31,11 @@ export function DashboardTab() {
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
       <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 10, marginBottom: theme.spacing.xxxl }}>
         {[
-          ['Use Cases', USE_CASES.length, theme.colors.textPrimary],
-          ['Building Blocks', BUILDING_BLOCKS.length, theme.colors.primary],
+          ['Use Cases', useCases.length, theme.colors.textPrimary],
+          ['Building Blocks', buildingBlocks.length, theme.colors.primary],
           ['Categories', 7, theme.colors.primaryDark],
           ['Mappings', totalMappings, theme.colors.activityPrimary],
-          ['Avg Blocks/UC', (totalMappings / USE_CASES.length).toFixed(1), theme.colors.activitySupport],
+          ['Avg Blocks/UC', (totalMappings / useCases.length).toFixed(1), theme.colors.activitySupport],
           ['Avg Maturity', overallAvg.toFixed(1), getMaturityLevel(overallAvg).color],
         ].map(([label, value, color]) => (
           <StatCard key={label} label={label} value={value} color={color} />
@@ -89,14 +88,14 @@ export function DashboardTab() {
       <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: theme.spacing.xxxl }}>
         <div style={{ flex: 1 }}>
           <SectionLabel>Maturity by Category</SectionLabel>
-          {CATEGORY_NAMES.map(cat => {
+          {categoryNames.map(cat => {
             const d = categoryData[cat];
             const avgC = d.scores.length ? d.scores.reduce((a, b) => a + b, 0) / d.scores.length : 0;
             return (
               <div key={cat} style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: theme.radii.sm, background: CATEGORIES[cat].color }} />
+                    <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: theme.radii.sm, background: categories[cat].color }} />
                     <span style={{ fontSize: theme.typography.sizes.md, fontWeight: theme.typography.weights.bold, color: theme.colors.textSecondary }}>{cat}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -104,7 +103,7 @@ export function DashboardTab() {
                     <span style={{ fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.semibold, color: theme.colors.textMuted }}>{avgC.toFixed(1)}</span>
                   </div>
                 </div>
-                <ProgressBar value={d.count} max={maxCategoryCount} color={CATEGORIES[cat].color} height={18} labelInside />
+                <ProgressBar value={d.count} max={maxCategoryCount} color={categories[cat].color} height={18} labelInside />
               </div>
             );
           })}
@@ -114,7 +113,7 @@ export function DashboardTab() {
               const ml = getMaturityLevel(avgMaturity);
               return (
                 <div key={area} style={{ display: 'flex', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid ' + theme.colors.borderLight, gap: 10 }}>
-                  <span style={{ fontSize: theme.typography.sizes.lg, color: theme.colors.textTertiary, width: 140, flexShrink: 0 }}>{VALUE_CHAIN_SHORT_LABELS[area]}</span>
+                  <span style={{ fontSize: theme.typography.sizes.lg, color: theme.colors.textTertiary, width: 140, flexShrink: 0 }}>{valueChainShortLabels[area]}</span>
                   <div style={{ flex: 1, height: 3, borderRadius: theme.radii.sm, background: theme.colors.borderLight, overflow: 'hidden' }}>
                     <div style={{ width: (count / activityData[0].count) * 100 + '%', height: '100%', background: theme.colors.primary, borderRadius: theme.radii.sm, transition: `width ${theme.transitions.normal}` }} />
                   </div>
@@ -129,12 +128,12 @@ export function DashboardTab() {
         <div style={{ width: isMobile ? '100%' : 400, flexShrink: 0 }}>
           <SectionLabel>Block Frequency &amp; Maturity</SectionLabel>
           {blockFrequency.map(([name, cnt]) => {
-            const score = getBlockMaturity(name);
+            const score = getBlockMaturity(name, buildingBlockMap);
             return (
               <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
-                <span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: 1, background: getBlockColor(name), flexShrink: 0 }} />
+                <span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: 1, background: getBlockColor(name, buildingBlockMap, categories), flexShrink: 0 }} />
                 <span style={{ width: 150, fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.semibold, color: theme.colors.textTertiary, flexShrink: 0, textAlign: 'right' }}>{name}</span>
-                <ProgressBar value={cnt} max={maxBlockFreq} color={getBlockColor(name)} height={11} labelInside />
+                <ProgressBar value={cnt} max={maxBlockFreq} color={getBlockColor(name, buildingBlockMap, categories)} height={11} labelInside />
                 <MaturityDots score={score} size={4} />
               </div>
             );

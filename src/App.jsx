@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { DataProvider, useData } from './contexts/DataContext';
 import { Header } from './components/layout/Header';
 import { TabBar } from './components/layout/TabBar';
 import { Footer } from './components/layout/Footer';
@@ -16,7 +17,10 @@ import { useCompare } from './hooks/useCompare';
 import { useAssessment } from './hooks/useAssessment';
 import { useRoadmap } from './hooks/useRoadmap';
 import { useWorkshop } from './hooks/useWorkshop';
+import { useAuth } from './hooks/useAuth';
 import { useBreakpoint } from './hooks/useBreakpoint';
+import { AdminLogin } from './components/admin/AdminLogin';
+import { AdminTab } from './components/admin/AdminTab';
 import { theme } from './styles/theme';
 
 const TABS = [
@@ -27,14 +31,16 @@ const TABS = [
   { id: 'roadmap', label: 'Roadmap' },
 ];
 
-export default function App() {
+function AppContent() {
   const [activeTab, setActiveTab] = useState('assessment');
   const [searchNavigation, setSearchNavigation] = useState(null);
-  const search = useSearch();
+  const data = useData();
+  const search = useSearch(data);
   const compare = useCompare();
   const assessment = useAssessment();
   const roadmap = useRoadmap();
   const workshop = useWorkshop();
+  const auth = useAuth();
   const { isMobile } = useBreakpoint();
 
   const handleSearchNavigate = useCallback((nav) => {
@@ -46,12 +52,33 @@ export default function App() {
     workshop.openWorkshop();
   }, [workshop]);
 
-  const tabsWithBadge = TABS.map(tab => {
-    if (tab.id === 'roadmap' && roadmap.shortlist.length > 0) {
-      return { ...tab, label: `Roadmap (${roadmap.shortlist.length})` };
-    }
-    return tab;
-  });
+  const tabsWithBadge = [
+    ...TABS.map(tab => {
+      if (tab.id === 'roadmap' && roadmap.shortlist.length > 0) {
+        return { ...tab, label: `Roadmap (${roadmap.shortlist.length})` };
+      }
+      return tab;
+    }),
+    { id: 'admin', label: auth.isAdmin ? '\u2713 Admin' : 'Admin' },
+  ];
+
+  if (data.loading) {
+    return (
+      <div style={{
+        fontFamily: theme.typography.fontFamily,
+        background: theme.colors.background,
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <div style={{ textAlign: 'center', color: theme.colors.textMuted }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>&#9881;</div>
+          <div style={{ fontSize: theme.typography.sizes.xxl }}>Loading data...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -71,6 +98,12 @@ export default function App() {
         {activeTab === 'finder' && <FinderTab roadmapState={roadmap} assessmentState={assessment} />}
         {activeTab === 'dashboard' && <DashboardTab />}
         {activeTab === 'roadmap' && <RoadmapTab roadmap={roadmap} />}
+        {activeTab === 'admin' && auth.isAdmin && (
+          <AdminTab onSignOut={auth.signOut} userEmail={auth.user?.email} />
+        )}
+        {activeTab === 'admin' && !auth.isAdmin && (
+          <AdminLogin onSignIn={auth.signIn} onVerify={auth.verify} />
+        )}
       </main>
       <Footer />
 
@@ -98,5 +131,13 @@ export default function App() {
         />
       )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <DataProvider>
+      <AppContent />
+    </DataProvider>
   );
 }

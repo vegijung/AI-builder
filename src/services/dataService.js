@@ -1,0 +1,200 @@
+import { supabase, isSupabaseConfigured } from './supabase';
+import { CATEGORIES } from '../data/categories';
+import { BUILDING_BLOCKS } from '../data/buildingBlocks';
+import { USE_CASES } from '../data/useCases';
+import { VALUE_CHAIN_SHORT_LABELS } from '../data/constants';
+
+// Fallback data (hardcoded)
+function getHardcodedCategories() {
+  return CATEGORIES;
+}
+
+function getHardcodedBuildingBlocks() {
+  return BUILDING_BLOCKS;
+}
+
+function getHardcodedUseCases() {
+  return USE_CASES;
+}
+
+function getHardcodedValueChainAreas() {
+  return Object.entries(VALUE_CHAIN_SHORT_LABELS).map(([name, shortLabel]) => ({ name, shortLabel }));
+}
+
+// Supabase fetchers
+export async function fetchCategories() {
+  if (!isSupabaseConfigured()) return getHardcodedCategories();
+
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('name, color, abbr, sort_order')
+      .order('sort_order');
+
+    if (error) throw error;
+
+    const result = {};
+    data.forEach(row => {
+      result[row.name] = { color: row.color, abbr: row.abbr };
+    });
+    return result;
+  } catch (e) {
+    console.warn('Failed to fetch categories from Supabase, using fallback:', e.message);
+    return getHardcodedCategories();
+  }
+}
+
+export async function fetchBuildingBlocks() {
+  if (!isSupabaseConfigured()) return getHardcodedBuildingBlocks();
+
+  try {
+    const { data, error } = await supabase
+      .from('building_blocks')
+      .select('name, category, maturity, sort_order')
+      .order('sort_order');
+
+    if (error) throw error;
+
+    return data.map(row => ({
+      name: row.name,
+      category: row.category,
+      maturity: row.maturity,
+    }));
+  } catch (e) {
+    console.warn('Failed to fetch building blocks from Supabase, using fallback:', e.message);
+    return getHardcodedBuildingBlocks();
+  }
+}
+
+export async function fetchUseCases() {
+  if (!isSupabaseConfigured()) return getHardcodedUseCases();
+
+  try {
+    const { data: useCases, error: ucError } = await supabase
+      .from('use_cases')
+      .select('id, name, activity_type, value_chain_area, sort_order')
+      .order('sort_order');
+
+    if (ucError) throw ucError;
+
+    const { data: blocks, error: bError } = await supabase
+      .from('use_case_blocks')
+      .select('use_case_id, block_name');
+
+    if (bError) throw bError;
+
+    const blocksByUseCase = {};
+    blocks.forEach(row => {
+      if (!blocksByUseCase[row.use_case_id]) blocksByUseCase[row.use_case_id] = [];
+      blocksByUseCase[row.use_case_id].push(row.block_name);
+    });
+
+    return useCases.map(uc => ({
+      name: uc.name,
+      activityType: uc.activity_type,
+      valueChainArea: uc.value_chain_area,
+      buildingBlocks: blocksByUseCase[uc.id] || [],
+    }));
+  } catch (e) {
+    console.warn('Failed to fetch use cases from Supabase, using fallback:', e.message);
+    return getHardcodedUseCases();
+  }
+}
+
+export async function fetchValueChainAreas() {
+  if (!isSupabaseConfigured()) return getHardcodedValueChainAreas();
+
+  try {
+    const { data, error } = await supabase
+      .from('value_chain_areas')
+      .select('name, short_label, sort_order')
+      .order('sort_order');
+
+    if (error) throw error;
+
+    return data.map(row => ({ name: row.name, shortLabel: row.short_label }));
+  } catch (e) {
+    console.warn('Failed to fetch value chain areas from Supabase, using fallback:', e.message);
+    return getHardcodedValueChainAreas();
+  }
+}
+
+// Admin CRUD operations (require auth)
+export async function upsertCategory(category) {
+  const { data, error } = await supabase
+    .from('categories')
+    .upsert({ name: category.name, color: category.color, abbr: category.abbr, sort_order: category.sort_order || 0 }, { onConflict: 'name' })
+    .select();
+  if (error) throw error;
+  return data[0];
+}
+
+export async function deleteCategory(name) {
+  const { error } = await supabase.from('categories').delete().eq('name', name);
+  if (error) throw error;
+}
+
+export async function upsertBuildingBlock(block) {
+  const { data, error } = await supabase
+    .from('building_blocks')
+    .upsert({ name: block.name, category: block.category, maturity: block.maturity, sort_order: block.sort_order || 0 }, { onConflict: 'name' })
+    .select();
+  if (error) throw error;
+  return data[0];
+}
+
+export async function deleteBuildingBlock(name) {
+  const { error } = await supabase.from('building_blocks').delete().eq('name', name);
+  if (error) throw error;
+}
+
+export async function upsertValueChainArea(area) {
+  const { data, error } = await supabase
+    .from('value_chain_areas')
+    .upsert({ name: area.name, short_label: area.shortLabel, sort_order: area.sort_order || 0 }, { onConflict: 'name' })
+    .select();
+  if (error) throw error;
+  return data[0];
+}
+
+export async function deleteValueChainArea(name) {
+  const { error } = await supabase.from('value_chain_areas').delete().eq('name', name);
+  if (error) throw error;
+}
+
+export async function upsertUseCase(useCase) {
+  // Upsert the use case itself
+  const { data, error } = await supabase
+    .from('use_cases')
+    .upsert({
+      name: useCase.name,
+      activity_type: useCase.activityType,
+      value_chain_area: useCase.valueChainArea,
+      sort_order: useCase.sort_order || 0,
+    }, { onConflict: 'name' })
+    .select();
+  if (error) throw error;
+
+  const ucId = data[0].id;
+
+  // Replace building block associations
+  await supabase.from('use_case_blocks').delete().eq('use_case_id', ucId);
+
+  if (useCase.buildingBlocks?.length > 0) {
+    const rows = useCase.buildingBlocks.map(blockName => ({ use_case_id: ucId, block_name: blockName }));
+    const { error: bError } = await supabase.from('use_case_blocks').insert(rows);
+    if (bError) throw bError;
+  }
+
+  return data[0];
+}
+
+export async function deleteUseCase(name) {
+  // Get the ID first so we can clean up junction table
+  const { data } = await supabase.from('use_cases').select('id').eq('name', name).single();
+  if (data) {
+    await supabase.from('use_case_blocks').delete().eq('use_case_id', data.id);
+  }
+  const { error } = await supabase.from('use_cases').delete().eq('name', name);
+  if (error) throw error;
+}

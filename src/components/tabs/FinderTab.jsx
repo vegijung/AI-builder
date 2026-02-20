@@ -1,7 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { USE_CASES } from '../../data/useCases';
-import { CATEGORIES, CATEGORY_NAMES } from '../../data/categories';
-import { VALUE_CHAIN_AREAS, VALUE_CHAIN_SHORT_LABELS } from '../../data/constants';
+import { useData } from '../../contexts/DataContext';
 import { getUseCaseAvgMaturity, getMaturityLevel, getBlockColor, getBlockMaturity, getBlockCategory } from '../../utils/maturity';
 import { findUseCases } from '../../utils/filtering';
 import { computeBlockFrequency, computeMaturityDistribution } from '../../utils/scoring';
@@ -14,6 +12,7 @@ import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { theme } from '../../styles/theme';
 
 export function FinderTab({ roadmapState, assessmentState }) {
+  const { useCases, categories, categoryNames, valueChainAreaNames, valueChainShortLabels, buildingBlockMap } = useData();
   const [selectedAreas, setSelectedAreas] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [minimumMaturity, setMinimumMaturity] = useState(0);
@@ -30,8 +29,8 @@ export function FinderTab({ roadmapState, assessmentState }) {
 
   const results = useMemo(() => {
     if (!showResults) return [];
-    return findUseCases(USE_CASES, { selectedAreas, selectedCategories, minimumMaturity });
-  }, [showResults, selectedAreas, selectedCategories, minimumMaturity]);
+    return findUseCases(useCases, { selectedAreas, selectedCategories, minimumMaturity }, buildingBlockMap);
+  }, [showResults, selectedAreas, selectedCategories, minimumMaturity, useCases, buildingBlockMap]);
 
   const topBlocks = useMemo(() => {
     const freq = {};
@@ -107,7 +106,7 @@ export function FinderTab({ roadmapState, assessmentState }) {
                         </span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textDisabled }}>{VALUE_CHAIN_SHORT_LABELS[uc.valueChainArea]}</span>
+                        <span style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textDisabled }}>{valueChainShortLabels[uc.valueChainArea]}</span>
                         <MaturityBadge avg={r.avgMaturity} />
                         {roadmapState && (
                           <button
@@ -130,8 +129,8 @@ export function FinderTab({ roadmapState, assessmentState }) {
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                       {uc.buildingBlocks.map(b => {
-                        const hl = !selectedCategories.length || selectedCategories.includes(getBlockCategory(b));
-                        const col = getBlockColor(b);
+                        const hl = !selectedCategories.length || selectedCategories.includes(getBlockCategory(b, buildingBlockMap));
+                        const col = getBlockColor(b, buildingBlockMap, categories);
                         return (
                           <span key={b} style={{
                             display: 'inline-flex',
@@ -146,7 +145,7 @@ export function FinderTab({ roadmapState, assessmentState }) {
                             border: '1px solid ' + (hl ? col + '30' : theme.colors.border),
                             transition: `all ${theme.transitions.fast}`,
                           }}>
-                            {b} <span style={{ fontSize: theme.typography.sizes.xs, fontWeight: theme.typography.weights.black, opacity: 0.6 }}>{getBlockMaturity(b)}</span>
+                            {b} <span style={{ fontSize: theme.typography.sizes.xs, fontWeight: theme.typography.weights.black, opacity: 0.6 }}>{getBlockMaturity(b, buildingBlockMap)}</span>
                           </span>
                         );
                       })}
@@ -181,9 +180,9 @@ export function FinderTab({ roadmapState, assessmentState }) {
             <SectionLabel>Top Building Blocks</SectionLabel>
             {topBlocks.map(([name, cnt]) => (
               <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0' }}>
-                <span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: 1, background: getBlockColor(name), flexShrink: 0 }} />
+                <span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: 1, background: getBlockColor(name, buildingBlockMap, categories), flexShrink: 0 }} />
                 <span style={{ fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.semibold, color: theme.colors.textSecondary, flex: 1 }}>{name}</span>
-                <MaturityDots score={getBlockMaturity(name)} size={4} />
+                <MaturityDots score={getBlockMaturity(name, buildingBlockMap)} size={4} />
                 <span style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textDisabled, width: 28, textAlign: 'right' }}>{Math.round((cnt / results.length) * 100)}%</span>
               </div>
             ))}
@@ -223,7 +222,7 @@ export function FinderTab({ roadmapState, assessmentState }) {
           <span style={{ fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.semibold, color: theme.colors.textSecondary }}>Value Chain Areas</span>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {VALUE_CHAIN_AREAS.map(area => {
+          {valueChainAreaNames.map(area => {
             const sel = selectedAreas.includes(area);
             return (
               <button key={area}
@@ -235,7 +234,7 @@ export function FinderTab({ roadmapState, assessmentState }) {
                   transition: `all ${theme.transitions.fast}`,
                 }}
               >
-                {VALUE_CHAIN_SHORT_LABELS[area]} ({USE_CASES.filter(u => u.valueChainArea === area).length})
+                {valueChainShortLabels[area]} ({useCases.filter(u => u.valueChainArea === area).length})
               </button>
             );
           })}
@@ -250,9 +249,9 @@ export function FinderTab({ roadmapState, assessmentState }) {
           <span style={{ fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.semibold, color: theme.colors.textSecondary }}>AI Capabilities</span>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {CATEGORY_NAMES.map(cat => {
+          {categoryNames.map(cat => {
             const sel = selectedCategories.includes(cat);
-            const col = CATEGORIES[cat].color;
+            const col = categories[cat].color;
             return (
               <button key={cat}
                 onClick={() => setSelectedCategories(prev => prev.includes(cat) ? prev.filter(x => x !== cat) : [...prev, cat])}

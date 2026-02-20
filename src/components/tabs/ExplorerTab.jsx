@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { USE_CASES } from '../../data/useCases';
+import { useData } from '../../contexts/DataContext';
 import { getUseCaseAvgMaturity } from '../../utils/maturity';
 import { filterUseCases } from '../../utils/filtering';
 import { SectionLabel } from '../shared/SectionLabel';
@@ -10,6 +10,7 @@ import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { theme } from '../../styles/theme';
 
 export function ExplorerTab({ searchNavigation, compareState, roadmapState }) {
+  const { useCases, buildingBlockMap } = useData();
   const [selectedArea, setSelectedArea] = useState(null);
   const [selectedBlock, setSelectedBlock] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -26,16 +27,16 @@ export function ExplorerTab({ searchNavigation, compareState, roadmapState }) {
   }, [searchNavigation]);
 
   const filteredUseCases = useMemo(() => {
-    return filterUseCases(USE_CASES, {
+    return filterUseCases(useCases, {
       valueChainArea: selectedArea,
       blockName: selectedBlock,
       categoryName: selectedCategory,
       sortBy: sortBy === 'md' ? 'maturityDesc' : sortBy === 'ma' ? 'maturityAsc' : null,
-    });
-  }, [selectedArea, selectedBlock, selectedCategory, sortBy]);
+    }, buildingBlockMap);
+  }, [useCases, buildingBlockMap, selectedArea, selectedBlock, selectedCategory, sortBy]);
 
   const hasFilters = selectedArea || selectedBlock || selectedCategory;
-  const overallAvg = filteredUseCases.length > 0 ? filteredUseCases.reduce((a, uc) => a + getUseCaseAvgMaturity(uc), 0) / filteredUseCases.length : 0;
+  const overallAvg = filteredUseCases.length > 0 ? filteredUseCases.reduce((a, uc) => a + getUseCaseAvgMaturity(uc, buildingBlockMap), 0) / filteredUseCases.length : 0;
 
   const resetFilters = () => { setSelectedArea(null); setSelectedBlock(null); setSelectedCategory(null); };
 

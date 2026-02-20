@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { CATEGORIES } from '../../data/categories';
-import { getBlockColor, getUseCaseAvgMaturity, getMaturityLevel } from '../../utils/maturity';
+import { useData } from '../../contexts/DataContext';
+import { getBlockColor } from '../../utils/maturity';
 import { theme } from '../../styles/theme';
 
 function HighlightText({ text, query }) {
@@ -21,6 +21,7 @@ export function GlobalSearch({ search, onNavigate }) {
   const [focusIndex, setFocusIndex] = useState(-1);
   const containerRef = useRef(null);
   const inputRef = useRef(null);
+  const { buildingBlockMap, categories } = useData();
 
   useEffect(() => {
     const handler = (e) => {
@@ -158,7 +159,7 @@ export function GlobalSearch({ search, onNavigate }) {
                     </span>
                   )}
                   {result.type === 'block' && (
-                    <span style={{ marginLeft: 8, display: 'inline-block', width: 6, height: 6, borderRadius: 1, background: getBlockColor(result.item.name), verticalAlign: 'middle' }} />
+                    <span style={{ marginLeft: 8, display: 'inline-block', width: 6, height: 6, borderRadius: 1, background: getBlockColor(result.item.name, buildingBlockMap, categories), verticalAlign: 'middle' }} />
                   )}
                 </div>
               </div>

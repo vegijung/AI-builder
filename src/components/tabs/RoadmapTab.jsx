@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { ROADMAP_PHASES } from '../../data/constants';
 import { getUseCaseAvgMaturity, getMaturityLevel, getBlockColor } from '../../utils/maturity';
 import { computePhaseBlocks, findDependencies, generateRoadmapText } from '../../utils/roadmap';
-import { VALUE_CHAIN_SHORT_LABELS } from '../../data/constants';
+import { generateRoadmapHtml, openHtmlReport } from '../../utils/exportHtml';
+import { useData } from '../../contexts/DataContext';
 import { SectionLabel } from '../shared/SectionLabel';
 import { MaturityBadge } from '../shared/MaturityBadge';
 import { MaturityDots } from '../shared/MaturityDots';
@@ -10,8 +11,9 @@ import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { theme } from '../../styles/theme';
 
 function PhaseColumn({ phase, items, allItems, onRemove, onPhaseChange }) {
+  const { buildingBlockMap, categories, valueChainShortLabels } = useData();
   const blocks = useMemo(() => computePhaseBlocks(items.map(i => i.useCase)), [items]);
-  const avgMaturity = items.length ? items.reduce((s, i) => s + getUseCaseAvgMaturity(i.useCase), 0) / items.length : 0;
+  const avgMaturity = items.length ? items.reduce((s, i) => s + getUseCaseAvgMaturity(i.useCase, buildingBlockMap), 0) / items.length : 0;
 
   return (
     <div style={{
@@ -37,7 +39,7 @@ function PhaseColumn({ phase, items, allItems, onRemove, onPhaseChange }) {
         )}
         {items.map((item, i) => {
           const uc = item.useCase;
-          const maturity = getUseCaseAvgMaturity(uc);
+          const maturity = getUseCaseAvgMaturity(uc, buildingBlockMap);
           const ml = getMaturityLevel(maturity);
           const deps = findDependencies(uc, allItems.map(x => x.useCase));
 
@@ -54,7 +56,7 @@ function PhaseColumn({ phase, items, allItems, onRemove, onPhaseChange }) {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 4 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: theme.typography.weights.bold, fontSize: theme.typography.sizes.lg, color: theme.colors.textPrimary, marginBottom: 2 }}>{uc.name}</div>
-                  <div style={{ fontSize: theme.typography.sizes.sm, color: theme.colors.textMuted }}>{VALUE_CHAIN_SHORT_LABELS[uc.valueChainArea]}</div>
+                  <div style={{ fontSize: theme.typography.sizes.sm, color: theme.colors.textMuted }}>{valueChainShortLabels[uc.valueChainArea]}</div>
                 </div>
                 <button onClick={() => onRemove(uc.name)} style={{
                   border: 'none', background: 'none', cursor: 'pointer', color: theme.colors.textMuted, fontSize: 14, padding: '0 2px', lineHeight: 1,
@@ -98,9 +100,9 @@ function PhaseColumn({ phase, items, allItems, onRemove, onPhaseChange }) {
             {blocks.map(b => (
               <span key={b} style={{
                 display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 6px', borderRadius: theme.radii.md,
-                background: getBlockColor(b) + '15', fontSize: theme.typography.sizes.sm, color: getBlockColor(b), fontWeight: theme.typography.weights.medium,
+                background: getBlockColor(b, buildingBlockMap, categories) + '15', fontSize: theme.typography.sizes.sm, color: getBlockColor(b, buildingBlockMap, categories), fontWeight: theme.typography.weights.medium,
               }}>
-                <span style={{ width: 4, height: 4, borderRadius: 1, background: getBlockColor(b) }} />
+                <span style={{ width: 4, height: 4, borderRadius: 1, background: getBlockColor(b, buildingBlockMap, categories) }} />
                 {b}
               </span>
             ))}
@@ -114,6 +116,7 @@ function PhaseColumn({ phase, items, allItems, onRemove, onPhaseChange }) {
 export function RoadmapTab({ roadmap }) {
   const { shortlist, removeFromRoadmap, setPhase, clearRoadmap } = roadmap;
   const { isMobile } = useBreakpoint();
+  const { buildingBlockMap, categories, valueChainShortLabels } = useData();
   const [copied, setCopied] = useState(false);
 
   const phaseItems = useMemo(() => {
@@ -130,8 +133,13 @@ export function RoadmapTab({ roadmap }) {
     return all.size;
   }, [shortlist]);
 
-  const handleExport = async () => {
-    const text = generateRoadmapText(phaseItems, shortlist);
+  const handleExportHtml = () => {
+    const html = generateRoadmapHtml(shortlist, buildingBlockMap, categories, valueChainShortLabels);
+    openHtmlReport(html);
+  };
+
+  const handleCopyText = async () => {
+    const text = generateRoadmapText(phaseItems, shortlist, buildingBlockMap);
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -169,21 +177,21 @@ export function RoadmapTab({ roadmap }) {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={handleExport} style={{
+          <button onClick={handleExportHtml} style={{
             padding: '8px 16px', borderRadius: theme.radii.lg, border: 'none',
             background: theme.colors.textPrimary, color: theme.colors.primary,
             fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.bold,
             cursor: 'pointer', fontFamily: 'inherit', transition: `all ${theme.transitions.fast}`,
           }}>
-            {copied ? '\u2713 Copied!' : 'Export to Clipboard'}
+            Export Report
           </button>
-          <button onClick={() => window.print()} style={{
+          <button onClick={handleCopyText} style={{
             padding: '8px 16px', borderRadius: theme.radii.lg, border: '1px solid ' + theme.colors.borderStrong,
             background: theme.colors.surface, color: theme.colors.textTertiary,
             fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.semibold,
             cursor: 'pointer', fontFamily: 'inherit',
           }}>
-            Print / PDF
+            {copied ? '\u2713 Copied!' : 'Copy Text'}
           </button>
           <button onClick={clearRoadmap} style={{
             padding: '8px 16px', borderRadius: theme.radii.lg, border: '1px solid ' + theme.colors.borderStrong,

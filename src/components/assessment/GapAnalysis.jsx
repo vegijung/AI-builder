@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { computeGapAnalysis, computeReadinessScore, getRecommendedUseCases } from '../../utils/assessment';
 import { getUseCaseAvgMaturity, getMaturityLevel } from '../../utils/maturity';
-import { VALUE_CHAIN_SHORT_LABELS } from '../../data/constants';
+import { useData } from '../../contexts/DataContext';
 import { SectionLabel } from '../shared/SectionLabel';
 import { MaturityBadge } from '../shared/MaturityBadge';
 import { MaturityDots } from '../shared/MaturityDots';
@@ -9,9 +9,11 @@ import { ReadinessRadar } from './ReadinessRadar';
 import { theme } from '../../styles/theme';
 
 export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isMobile }) {
-  const gaps = useMemo(() => computeGapAnalysis(areaRatings), [areaRatings]);
+  const { valueChainShortLabels, useCases, buildingBlockMap } = useData();
+
+  const gaps = useMemo(() => computeGapAnalysis(areaRatings, useCases, buildingBlockMap), [areaRatings, useCases, buildingBlockMap]);
   const readinessScore = useMemo(() => computeReadinessScore(readinessRatings), [readinessRatings]);
-  const recommendations = useMemo(() => getRecommendedUseCases(areaRatings, readinessRatings, 10), [areaRatings, readinessRatings]);
+  const recommendations = useMemo(() => getRecommendedUseCases(areaRatings, readinessRatings, 10, useCases, buildingBlockMap), [areaRatings, readinessRatings, useCases, buildingBlockMap]);
 
   const overallReadiness = getMaturityLevel(readinessScore);
 
@@ -43,7 +45,7 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isM
                 <div key={area} style={{ marginBottom: 14 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                     <span style={{ fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.semibold, color: theme.colors.textSecondary }}>
-                      {VALUE_CHAIN_SHORT_LABELS[area] || area}
+                      {valueChainShortLabels[area] || area}
                     </span>
                     <span style={{
                       fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.bold,
@@ -113,7 +115,7 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isM
                 <div>
                   <span style={{ fontWeight: theme.typography.weights.bold, fontSize: theme.typography.sizes.xl, color: theme.colors.textPrimary }}>{uc.name}</span>
                   <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
-                    <span style={{ fontSize: theme.typography.sizes.sm, color: theme.colors.textMuted }}>{VALUE_CHAIN_SHORT_LABELS[uc.valueChainArea]}</span>
+                    <span style={{ fontSize: theme.typography.sizes.sm, color: theme.colors.textMuted }}>{valueChainShortLabels[uc.valueChainArea]}</span>
                     <span style={{ fontSize: theme.typography.sizes.sm, color: uc.activityType === 'Primary' ? '#3aaa88' : '#4aa8b4' }}>{uc.activityType}</span>
                   </div>
                 </div>

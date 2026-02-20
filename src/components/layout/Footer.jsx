@@ -1,8 +1,10 @@
-import { CATEGORIES, CATEGORY_NAMES } from '../../data/categories';
+import { useData } from '../../contexts/DataContext';
 import { MATURITY_LABELS, MATURITY_COLORS } from '../../data/constants';
 import { theme } from '../../styles/theme';
 
 export function Footer() {
+  const { categories, categoryNames } = useData();
+
   return (
     <footer style={{
       marginTop: theme.spacing.xxxxl,
@@ -15,9 +17,9 @@ export function Footer() {
       gap: theme.spacing.sm,
     }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14 }}>
-        {CATEGORY_NAMES.map(cat => (
+        {categoryNames.map(cat => (
           <span key={cat} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: theme.radii.sm, background: CATEGORIES[cat].color }} />
+            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: theme.radii.sm, background: categories[cat]?.color }} />
             <span style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textFaint }}>{cat}</span>
           </span>
         ))}

@@ -1,15 +1,15 @@
-import { USE_CASES } from '../data/useCases';
-import { getUseCaseAvgMaturity, getMaturityLevel } from './maturity';
+import { USE_CASES as staticUseCases } from '../data/useCases';
+import { getUseCaseAvgMaturity } from './maturity';
 
-export function computeAreaMaturity(area) {
-  const areaUCs = USE_CASES.filter(uc => uc.valueChainArea === area);
-  if (!areaUCs.length) return 0;
-  return areaUCs.reduce((sum, uc) => sum + getUseCaseAvgMaturity(uc), 0) / areaUCs.length;
+export function computeAreaMaturity(area, useCases, blockMap) {
+  const ucs = (useCases || staticUseCases).filter(uc => uc.valueChainArea === area);
+  if (!ucs.length) return 0;
+  return ucs.reduce((sum, uc) => sum + getUseCaseAvgMaturity(uc, blockMap), 0) / ucs.length;
 }
 
-export function computeGapAnalysis(areaRatings) {
+export function computeGapAnalysis(areaRatings, useCases, blockMap) {
   return Object.entries(areaRatings).map(([area, userRating]) => {
-    const availableMaturity = computeAreaMaturity(area);
+    const availableMaturity = computeAreaMaturity(area, useCases, blockMap);
     const gap = availableMaturity - userRating;
     return { area, userRating, availableMaturity, gap, absGap: Math.abs(gap) };
   }).sort((a, b) => a.absGap - b.absGap);
@@ -21,15 +21,15 @@ export function computeReadinessScore(readinessRatings) {
   return values.reduce((a, b) => a + b, 0) / values.length;
 }
 
-export function getRecommendedUseCases(areaRatings, readinessRatings, limit = 10) {
+export function getRecommendedUseCases(areaRatings, readinessRatings, limit = 10, useCases, blockMap) {
   const readinessScore = computeReadinessScore(readinessRatings);
   const selectedAreas = Object.keys(areaRatings);
   if (!selectedAreas.length) return [];
 
-  const candidates = USE_CASES.filter(uc => selectedAreas.includes(uc.valueChainArea));
+  const candidates = (useCases || staticUseCases).filter(uc => selectedAreas.includes(uc.valueChainArea));
 
   return candidates.map(uc => {
-    const maturity = getUseCaseAvgMaturity(uc);
+    const maturity = getUseCaseAvgMaturity(uc, blockMap);
     const userAreaRating = areaRatings[uc.valueChainArea] || 1;
     const maturityGap = Math.abs(maturity - userAreaRating);
     const feasibility = Math.min(5, readinessScore + (maturity >= 3.5 ? 1 : 0));
