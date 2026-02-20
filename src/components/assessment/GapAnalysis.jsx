@@ -326,8 +326,8 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isM
   const readinessScore = useMemo(() => computeReadinessScore(readinessRatings), [readinessRatings]);
   const dimensionScores = useMemo(() => computeDimensionScores(readinessRatings), [readinessRatings]);
   const recommendations = useMemo(
-    () => getRecommendedUseCases(areaRatings, readinessRatings, 10, useCases, buildingBlockMap, priorities),
-    [areaRatings, readinessRatings, useCases, buildingBlockMap, priorities],
+    () => getRecommendedUseCases(areaRatings, readinessRatings, 10, useCases, buildingBlockMap, priorities, dimensionScores),
+    [areaRatings, readinessRatings, useCases, buildingBlockMap, priorities, dimensionScores],
   );
   const execSummary = useMemo(
     () => generateExecutiveSummary(dimensionScores, recommendations, priorities, areaRatings, useCases),

@@ -23,33 +23,45 @@ export const READINESS_DIMENSIONS = [
   {
     id: 'data', label: 'Data Readiness',
     subQuestions: [
-      { id: 'data_governance', label: 'Data Governance', description: 'Clear data ownership, policies, and compliance processes' },
-      { id: 'data_accessibility', label: 'Data Accessibility', description: 'Integrated systems, APIs, and a single source of truth' },
-      { id: 'data_quality', label: 'Data Quality', description: 'Clean, consistent, and well-labeled datasets' },
+      { id: 'data_governance', label: 'Data Governance', description: 'Clear data ownership, policies, and compliance processes',
+        guide: { low: 'No formal data policies; ownership unclear; compliance ad-hoc', mid: 'Some policies exist but inconsistently applied; ownership partially defined', high: 'Clear policies, defined owners, automated compliance checks' } },
+      { id: 'data_accessibility', label: 'Data Accessibility', description: 'Integrated systems, APIs, and a single source of truth',
+        guide: { low: 'Data siloed in disconnected systems; no APIs; manual exports', mid: 'Some integrations exist; partial API coverage; multiple sources of truth', high: 'Unified data platform; comprehensive APIs; single source of truth' } },
+      { id: 'data_quality', label: 'Data Quality', description: 'Clean, consistent, and well-labeled datasets',
+        guide: { low: 'Frequent data errors; inconsistent formats; no labeling standards', mid: 'Basic quality checks in place; some inconsistencies remain; partial labeling', high: 'Automated quality pipelines; consistent standards; well-labeled and documented' } },
     ],
   },
   {
     id: 'infra', label: 'Technical Infrastructure',
     subQuestions: [
-      { id: 'infra_cloud', label: 'Cloud & Compute', description: 'Cloud-native, scalable compute infrastructure' },
-      { id: 'infra_integration', label: 'Integration Capability', description: 'APIs, middleware, and system interoperability' },
-      { id: 'infra_ml', label: 'ML/AI Platforms', description: 'Tooling, MLOps pipelines, and model serving' },
+      { id: 'infra_cloud', label: 'Cloud & Compute', description: 'Cloud-native, scalable compute infrastructure',
+        guide: { low: 'On-premise only; no cloud strategy; limited compute capacity', mid: 'Partial cloud adoption; some scalable resources; migration underway', high: 'Cloud-native architecture; auto-scaling; GPU/TPU available on demand' } },
+      { id: 'infra_integration', label: 'Integration Capability', description: 'APIs, middleware, and system interoperability',
+        guide: { low: 'Manual file transfers between systems; no middleware; point-to-point integrations', mid: 'Some API-based integrations; middleware for core systems; gaps remain', high: 'Event-driven architecture; comprehensive API layer; seamless interoperability' } },
+      { id: 'infra_ml', label: 'ML/AI Platforms', description: 'Tooling, MLOps pipelines, and model serving',
+        guide: { low: 'No ML tools; models run in notebooks or local scripts only', mid: 'Some ML tools adopted; basic pipelines; manual model deployment', high: 'Full MLOps platform; automated training pipelines; model monitoring in production' } },
     ],
   },
   {
     id: 'talent', label: 'Talent & Skills',
     subQuestions: [
-      { id: 'talent_expertise', label: 'AI/ML Expertise', description: 'Dedicated data science or AI engineering team' },
-      { id: 'talent_literacy', label: 'Data Literacy', description: 'Organization-wide understanding of data-driven decisions' },
-      { id: 'talent_change', label: 'Change Management', description: 'Ability to adopt new tools and processes across teams' },
+      { id: 'talent_expertise', label: 'AI/ML Expertise', description: 'Dedicated data science or AI engineering team',
+        guide: { low: 'No dedicated AI/ML staff; relying on general IT or external consultants', mid: '1-2 data scientists or ML engineers; skills concentrated in one team', high: 'Established AI team with diverse specializations; active research and development' } },
+      { id: 'talent_literacy', label: 'Data Literacy', description: 'Organization-wide understanding of data-driven decisions',
+        guide: { low: 'Most staff unfamiliar with data concepts; decisions rarely data-driven', mid: 'Key teams use data for decisions; training programs starting; uneven adoption', high: 'Data-literate culture; self-service analytics widespread; data informs all major decisions' } },
+      { id: 'talent_change', label: 'Change Management', description: 'Ability to adopt new tools and processes across teams',
+        guide: { low: 'High resistance to new tools; no change management process; past rollouts struggled', mid: 'Some change management practices; mixed adoption rates; learning from past efforts', high: 'Proven change management framework; high adoption rates; culture embraces innovation' } },
     ],
   },
   {
     id: 'leadership', label: 'Leadership & Strategy',
     subQuestions: [
-      { id: 'leadership_sponsor', label: 'Executive Sponsorship', description: 'C-level champion actively driving AI initiatives' },
-      { id: 'leadership_budget', label: 'Budget Allocation', description: 'Dedicated AI/innovation budget secured' },
-      { id: 'leadership_alignment', label: 'Strategic Alignment', description: 'AI initiatives tied directly to business strategy' },
+      { id: 'leadership_sponsor', label: 'Executive Sponsorship', description: 'C-level champion actively driving AI initiatives',
+        guide: { low: 'No executive interest in AI; AI not discussed at leadership level', mid: 'Leadership aware and supportive but not actively championing AI', high: 'C-level sponsor actively driving AI agenda; regular board-level AI updates' } },
+      { id: 'leadership_budget', label: 'Budget Allocation', description: 'Dedicated AI/innovation budget secured',
+        guide: { low: 'No dedicated AI budget; projects funded ad-hoc from departmental budgets', mid: 'Some budget earmarked for AI/innovation; competes with other priorities', high: 'Dedicated multi-year AI budget; clear investment roadmap approved' } },
+      { id: 'leadership_alignment', label: 'Strategic Alignment', description: 'AI initiatives tied directly to business strategy',
+        guide: { low: 'AI not part of corporate strategy; initiatives disconnected from business goals', mid: 'AI mentioned in strategy but loosely connected to specific business outcomes', high: 'AI embedded in corporate strategy; clear KPIs linking AI to business value' } },
     ],
   },
 ];
@@ -72,12 +84,19 @@ export const INDUSTRIES = [
 export const COMPANY_SIZES = ['1-50', '51-200', '201-1,000', '1,001-5,000', '5,000+'];
 
 export const ADOPTION_LEVELS = [
-  { score: 1, label: 'None', description: 'No AI initiatives in this area' },
-  { score: 2, label: 'Exploring', description: 'Researching possibilities, no active projects' },
-  { score: 3, label: 'Piloting', description: 'Running 1-2 proof of concepts' },
-  { score: 4, label: 'Scaling', description: 'Multiple AI solutions in production' },
-  { score: 5, label: 'Optimized', description: 'AI deeply embedded, continuously improving' },
+  { score: 1, label: 'None', description: 'No AI initiatives in this area',
+    examples: ['No AI tools or pilots', 'AI not on the agenda', 'No data strategy for this area'] },
+  { score: 2, label: 'Exploring', description: 'Researching possibilities, no active projects',
+    examples: ['Evaluating AI vendors or tools', 'Discussing AI in leadership meetings', 'Identifying potential use cases'] },
+  { score: 3, label: 'Piloting', description: 'Running 1-2 proof of concepts',
+    examples: ['1-2 AI projects in testing', 'Small team experimenting', 'Initial results being evaluated'] },
+  { score: 4, label: 'Scaling', description: 'Multiple AI solutions in production',
+    examples: ['3+ AI tools in daily use', 'Dedicated team managing AI', 'Measurable ROI from AI'] },
+  { score: 5, label: 'Optimized', description: 'AI deeply embedded, continuously improving',
+    examples: ['AI integral to core workflows', 'Continuous model retraining', 'Organization-wide AI literacy'] },
 ];
+
+export const READINESS_RATING_LABELS = ['None', 'Basic', 'Developing', 'Strong', 'Leading'];
 
 export const CATEGORY_READINESS_MAP = {
   'Understanding & Summarization': { dims: ['data', 'infra'], reason: 'Summarization and search AI relies on well-structured, accessible data and integration with existing systems.' },

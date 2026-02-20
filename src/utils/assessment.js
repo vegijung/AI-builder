@@ -54,8 +54,28 @@ export function getPriorityAlignments(uc, priorityIds) {
   });
 }
 
-export function getRecommendedUseCases(areaRatings, readinessRatings, limit = 10, useCases, blockMap, priorities) {
+function computeFeasibility(uc, readinessScore, dimensionScores, blockMap) {
+  const categories = {};
+  (uc.buildingBlocks || []).forEach(bName => {
+    const cat = getBlockCategory(bName, blockMap);
+    if (cat) categories[cat] = true;
+  });
+
+  const relevantDims = new Set();
+  Object.keys(categories).forEach(cat => {
+    const mapping = CATEGORY_READINESS_MAP[cat];
+    if (mapping) mapping.dims.forEach(d => relevantDims.add(d));
+  });
+
+  if (!relevantDims.size || !dimensionScores) return Math.min(5, readinessScore);
+
+  const relevantAvg = [...relevantDims].reduce((sum, d) => sum + (dimensionScores[d] || 3), 0) / relevantDims.size;
+  return relevantAvg * 0.6 + readinessScore * 0.4;
+}
+
+export function getRecommendedUseCases(areaRatings, readinessRatings, limit = 10, useCases, blockMap, priorities, dimensionScores) {
   const readinessScore = computeReadinessScore(readinessRatings);
+  const dimScores = dimensionScores || computeDimensionScores(readinessRatings);
   const selectedAreas = Object.keys(areaRatings);
   if (!selectedAreas.length) return [];
 
@@ -65,16 +85,21 @@ export function getRecommendedUseCases(areaRatings, readinessRatings, limit = 10
   return candidates.map(uc => {
     const maturity = getUseCaseAvgMaturity(uc, blockMap);
     const userAreaRating = areaRatings[uc.valueChainArea] || 1;
-    const maturityGap = Math.abs(maturity - userAreaRating);
-    const feasibility = Math.min(5, readinessScore + (maturity >= 3.5 ? 1 : 0));
+
+    const delta = maturity - userAreaRating;
+    const opportunityScore = delta >= 0
+      ? Math.max(0, 5 - delta * 0.5)
+      : Math.max(0, 5 + delta * 1.5);
+
+    const feasibility = computeFeasibility(uc, readinessScore, dimScores, blockMap);
     const priorityAlignment = hasPriorities ? computePriorityAlignment(uc, priorities) : 0;
 
     const score = hasPriorities
-      ? (5 - maturityGap) * 0.3 + maturity * 0.2 + feasibility * 0.2 + priorityAlignment * 5 * 0.3
-      : (5 - maturityGap) * 0.4 + maturity * 0.3 + feasibility * 0.3;
+      ? opportunityScore * 0.25 + maturity * 0.15 + feasibility * 0.25 + priorityAlignment * 5 * 0.35
+      : opportunityScore * 0.35 + maturity * 0.25 + feasibility * 0.40;
 
     const alignedPriorities = getPriorityAlignments(uc, priorities);
-    return { useCase: uc, maturity, score, feasibility, maturityGap, priorityAlignment, alignedPriorities };
+    return { useCase: uc, maturity, score, feasibility, opportunityScore, delta, priorityAlignment, alignedPriorities };
   }).sort((a, b) => b.score - a.score).slice(0, limit);
 }
 
@@ -165,24 +190,32 @@ export function generateExecutiveSummary(dimensionScores, recommendations, prior
 export function generateWhyText(rec, readinessScore, areaRatings, priorities) {
   const parts = [];
   const ml = getMaturityLevel(rec.maturity);
+  const areaLabel = VALUE_CHAIN_SHORT_LABELS[rec.useCase.valueChainArea] || rec.useCase.valueChainArea;
+  const userRating = areaRatings[rec.useCase.valueChainArea] || 1;
+  const adoptionLabel = ADOPTION_LEVELS.find(l => l.score === userRating)?.label || '';
+
   parts.push(`The AI technologies behind this use case average ${rec.maturity.toFixed(1)}/5 maturity (${ml.label}).`);
 
-  if (readinessScore >= 3.5) {
-    parts.push(`Given your readiness score of ${readinessScore.toFixed(1)}/5, this is highly feasible to implement.`);
-  } else if (readinessScore >= 2.5) {
-    parts.push(`With your readiness at ${readinessScore.toFixed(1)}/5, this is feasible with some targeted investment.`);
+  if (rec.delta !== undefined) {
+    if (rec.delta >= 1.5) {
+      parts.push(`The technology is well ahead of your current adoption in ${areaLabel} ("${adoptionLabel}", ${userRating}/5) -- a strong opportunity to leapfrog.`);
+    } else if (rec.delta >= 0) {
+      parts.push(`The technology maturity closely matches your adoption level in ${areaLabel} -- a natural fit for your current stage.`);
+    } else {
+      parts.push(`Your adoption in ${areaLabel} (${userRating}/5) is ahead of the available technology (${rec.maturity.toFixed(1)}/5) -- this area may need the tech to catch up.`);
+    }
+  }
+
+  if (rec.feasibility >= 3.5) {
+    parts.push(`Your organizational readiness makes this highly feasible to implement.`);
+  } else if (rec.feasibility >= 2.5) {
+    parts.push(`This is feasible with some targeted investment in the readiness areas this use case depends on.`);
   } else {
-    parts.push(`Your readiness score of ${readinessScore.toFixed(1)}/5 means this will require foundational improvements first.`);
+    parts.push(`This will require foundational improvements in key readiness areas before implementation.`);
   }
 
   if (rec.alignedPriorities && rec.alignedPriorities.length) {
     parts.push(`This directly supports your ${rec.alignedPriorities.map(p => p.label).join(' and ')} goal${rec.alignedPriorities.length > 1 ? 's' : ''}.`);
-  }
-
-  const userRating = areaRatings[rec.useCase.valueChainArea] || 1;
-  const adoptionLabel = ADOPTION_LEVELS.find(l => l.score === userRating)?.label || '';
-  if (userRating < 4) {
-    parts.push(`Your ${VALUE_CHAIN_SHORT_LABELS[rec.useCase.valueChainArea] || rec.useCase.valueChainArea} area is currently at "${adoptionLabel}" (${userRating}/5) -- this use case can help you advance.`);
   }
 
   return parts.join(' ');

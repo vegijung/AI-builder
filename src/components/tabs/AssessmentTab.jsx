@@ -1,4 +1,4 @@
-import { READINESS_DIMENSIONS, ADOPTION_LEVELS, STRATEGIC_PRIORITIES, INDUSTRIES, COMPANY_SIZES } from '../../data/constants';
+import { READINESS_DIMENSIONS, ADOPTION_LEVELS, READINESS_RATING_LABELS, STRATEGIC_PRIORITIES, INDUSTRIES, COMPANY_SIZES } from '../../data/constants';
 import { useData } from '../../contexts/DataContext';
 import { GapAnalysis } from '../assessment/GapAnalysis';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
@@ -221,21 +221,41 @@ export function AssessmentTab({ assessment, onAddToRoadmap }) {
             How advanced is your organization&rsquo;s AI usage in these value chain areas?
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {selectedAreas.map(area => (
-              <div key={area} style={{
-                background: theme.colors.surface, border: '1px solid ' + theme.colors.border, borderRadius: theme.radii.xl,
-                padding: 16, boxShadow: theme.shadows.card,
-              }}>
-                <div style={{ fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, color: theme.colors.textPrimary, marginBottom: 8 }}>
-                  {valueChainShortLabels[area]}
+            {selectedAreas.map(area => {
+              const currentLevel = ADOPTION_LEVELS.find(l => l.score === (areaRatings[area] || 1));
+              return (
+                <div key={area} style={{
+                  background: theme.colors.surface, border: '1px solid ' + theme.colors.border, borderRadius: theme.radii.xl,
+                  padding: 16, boxShadow: theme.shadows.card,
+                }}>
+                  <div style={{ fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, color: theme.colors.textPrimary, marginBottom: 8 }}>
+                    {valueChainShortLabels[area]}
+                  </div>
+                  <RatingSlider
+                    value={areaRatings[area] || 1}
+                    onChange={(v) => setAreaRating(area, v)}
+                    labels={ADOPTION_LEVELS.map(l => l.label)}
+                  />
+                  {currentLevel && (
+                    <div style={{
+                      marginTop: 10, padding: '10px 14px', borderRadius: theme.radii.lg,
+                      background: theme.colors.surfaceMuted, border: '1px solid ' + theme.colors.borderLight,
+                    }}>
+                      <div style={{ fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.semibold, color: theme.colors.textSecondary, marginBottom: 4 }}>
+                        Level {currentLevel.score}: {currentLevel.label} &mdash; {currentLevel.description}
+                      </div>
+                      {currentLevel.examples && (
+                        <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          {currentLevel.examples.map((ex, i) => (
+                            <li key={i} style={{ fontSize: theme.typography.sizes.md, color: theme.colors.textMuted }}>{ex}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <RatingSlider
-                  value={areaRatings[area] || 1}
-                  onChange={(v) => setAreaRating(area, v)}
-                  labels={ADOPTION_LEVELS.map(l => l.label)}
-                />
-              </div>
-            ))}
+              );
+            })}
           </div>
           <NavButtons
             onBack={() => setStep(1)}
@@ -276,21 +296,38 @@ export function AssessmentTab({ assessment, onAddToRoadmap }) {
                     </span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    {dim.subQuestions.map(sq => (
-                      <div key={sq.id}>
-                        <div style={{ fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.bold, color: theme.colors.textPrimary, marginBottom: 2 }}>
-                          {sq.label}
+                    {dim.subQuestions.map(sq => {
+                      const val = readinessRatings[sq.id] || 3;
+                      const guideTier = val <= 2 ? 'low' : val <= 3 ? 'mid' : 'high';
+                      const guideText = sq.guide?.[guideTier];
+                      return (
+                        <div key={sq.id}>
+                          <div style={{ fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.bold, color: theme.colors.textPrimary, marginBottom: 2 }}>
+                            {sq.label}
+                          </div>
+                          <div style={{ fontSize: theme.typography.sizes.lg, color: theme.colors.textMuted, marginBottom: 8 }}>
+                            {sq.description}
+                          </div>
+                          <RatingSlider
+                            value={val}
+                            onChange={(v) => setReadinessRating(sq.id, v)}
+                            labels={READINESS_RATING_LABELS}
+                          />
+                          {guideText && (
+                            <div style={{
+                              marginTop: 8, padding: '8px 12px', borderRadius: theme.radii.lg,
+                              background: theme.colors.surfaceMuted, border: '1px solid ' + theme.colors.borderLight,
+                              fontSize: theme.typography.sizes.md, color: theme.colors.textMuted, lineHeight: 1.4,
+                            }}>
+                              <span style={{ fontWeight: theme.typography.weights.semibold, color: theme.colors.textTertiary }}>
+                                {READINESS_RATING_LABELS[val - 1]} ({val}/5):
+                              </span>{' '}
+                              {guideText}
+                            </div>
+                          )}
                         </div>
-                        <div style={{ fontSize: theme.typography.sizes.lg, color: theme.colors.textMuted, marginBottom: 8 }}>
-                          {sq.description}
-                        </div>
-                        <RatingSlider
-                          value={readinessRatings[sq.id] || 3}
-                          onChange={(v) => setReadinessRating(sq.id, v)}
-                          labels={['Very Low', 'Low', 'Medium', 'High', 'Very High']}
-                        />
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               );
