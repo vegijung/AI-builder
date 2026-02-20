@@ -1,6 +1,6 @@
 import { theme } from '../../styles/theme';
 
-export function Header({ searchSlot, onAdminClick, isAdmin }) {
+export function Header({ searchSlot, onAdminClick, isAdmin, onHelpClick }) {
   return (
     <header style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -25,6 +25,23 @@ export function Header({ searchSlot, onAdminClick, isAdmin }) {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
         {searchSlot}
+        <button
+          onClick={onHelpClick}
+          title="App tour"
+          style={{
+            width: 38, height: 38, borderRadius: theme.radii.circle,
+            border: `1px solid ${theme.colors.borderMedium}`,
+            background: theme.colors.surface,
+            color: theme.colors.textMuted,
+            fontSize: 17, fontWeight: theme.typography.weights.bold, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: `all ${theme.transitions.fast}`, fontFamily: 'inherit',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = theme.colors.primary; e.currentTarget.style.color = theme.colors.primaryDark; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = theme.colors.borderMedium; e.currentTarget.style.color = theme.colors.textMuted; }}
+        >
+          ?
+        </button>
         <button
           onClick={onAdminClick}
           title={isAdmin ? 'Admin Panel' : 'Admin Login'}

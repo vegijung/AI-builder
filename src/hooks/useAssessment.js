@@ -135,6 +135,12 @@ export function useAssessment() {
     persist({ leadSubmitted: true });
   }, [persist]);
 
+  const editAssessment = useCallback(() => {
+    setIsComplete(false);
+    setStep(4);
+    persist({ isComplete: false });
+  }, [persist]);
+
   const resetAssessment = useCallback(() => {
     setCompanyProfileState({ industry: '', companySize: '', role: '' });
     setSelectedAreas([]);
@@ -150,6 +156,6 @@ export function useAssessment() {
   return {
     companyProfile, selectedAreas, areaRatings, readinessRatings, priorities, step, isComplete, leadSubmitted,
     setCompanyProfile, toggleArea, setAreaRating, setReadinessRating, togglePriority,
-    setStep, completeAssessment, resetAssessment, setLeadSubmitted,
+    setStep, completeAssessment, editAssessment, resetAssessment, setLeadSubmitted,
   };
 }

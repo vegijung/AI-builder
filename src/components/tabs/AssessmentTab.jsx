@@ -105,7 +105,7 @@ export function AssessmentTab({ assessment, onAddToRoadmap }) {
     companyProfile, selectedAreas, areaRatings, readinessRatings, priorities,
     step, isComplete, leadSubmitted,
     setCompanyProfile, toggleArea, setAreaRating, setReadinessRating, togglePriority,
-    setStep, completeAssessment, resetAssessment, setLeadSubmitted,
+    setStep, completeAssessment, editAssessment, resetAssessment, setLeadSubmitted,
   } = assessment;
 
   // Step 5: Results
@@ -114,13 +114,22 @@ export function AssessmentTab({ assessment, onAddToRoadmap }) {
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
           <StepIndicator current={5} total={TOTAL_STEPS} />
-          <button onClick={resetAssessment} style={{
-            padding: '6px 14px', borderRadius: theme.radii.lg, border: '1px solid ' + theme.colors.borderStrong,
-            background: theme.colors.surface, color: theme.colors.textTertiary, fontSize: theme.typography.sizes.md,
-            fontWeight: theme.typography.weights.semibold, cursor: 'pointer', fontFamily: 'inherit',
-          }}>
-            Restart Assessment
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={editAssessment} style={{
+              padding: '6px 14px', borderRadius: theme.radii.lg, border: '1px solid ' + theme.colors.primary,
+              background: theme.colors.primary + '10', color: theme.colors.primary, fontSize: theme.typography.sizes.md,
+              fontWeight: theme.typography.weights.semibold, cursor: 'pointer', fontFamily: 'inherit',
+            }}>
+              &larr; Edit Answers
+            </button>
+            <button onClick={resetAssessment} style={{
+              padding: '6px 14px', borderRadius: theme.radii.lg, border: '1px solid ' + theme.colors.borderStrong,
+              background: theme.colors.surface, color: theme.colors.textTertiary, fontSize: theme.typography.sizes.md,
+              fontWeight: theme.typography.weights.semibold, cursor: 'pointer', fontFamily: 'inherit',
+            }}>
+              Restart Assessment
+            </button>
+          </div>
         </div>
         <GapAnalysis
           areaRatings={areaRatings}

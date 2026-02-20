@@ -10,6 +10,7 @@ import { GlobalSearch } from './components/search/GlobalSearch';
 import { ComparePanel } from './components/compare/ComparePanel';
 import { CompareFloatingButton } from './components/compare/CompareFloatingButton';
 import { AdminOverlay } from './components/admin/AdminOverlay';
+import { OnboardingTour } from './components/onboarding/OnboardingTour';
 import { useSearch } from './hooks/useSearch';
 import { useCompare } from './hooks/useCompare';
 import { useAssessment } from './hooks/useAssessment';
@@ -28,6 +29,9 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState('assessment');
   const [searchNavigation, setSearchNavigation] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try { return !localStorage.getItem('ai-builder-onboarding-complete'); } catch { return true; }
+  });
   const data = useData();
   const search = useSearch(data);
   const compare = useCompare();
@@ -77,6 +81,7 @@ function AppContent() {
         searchSlot={<GlobalSearch search={search} onNavigate={handleSearchNavigate} />}
         onAdminClick={() => setShowAdmin(true)}
         isAdmin={auth.isAdmin}
+        onHelpClick={() => setShowOnboarding(true)}
       />
 
       <TabBar tabs={tabsWithBadge} activeTab={activeTab} onTabChange={setActiveTab} />
@@ -122,6 +127,12 @@ function AppContent() {
           onClose={() => setShowAdmin(false)}
         />
       )}
+
+      <OnboardingTour
+        visible={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        onNavigate={setActiveTab}
+      />
     </div>
   );
 }
