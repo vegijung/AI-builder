@@ -158,7 +158,7 @@ export function RoadmapTab({ roadmap }) {
           Your Roadmap is Empty
         </h2>
         <p style={{ fontSize: theme.typography.sizes.xxl, color: theme.colors.textTertiary, maxWidth: 500, margin: '0 auto', lineHeight: 1.6 }}>
-          Add use cases from the <strong>Explorer</strong>, <strong>Finder</strong>, or <strong>Assessment</strong> tabs
+          Add use cases from the <strong>Explore</strong> or <strong>Assessment</strong> tabs
           to start building your AI implementation roadmap.
         </p>
       </div>

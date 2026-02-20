@@ -1,37 +1,47 @@
-import { useData } from '../../contexts/DataContext';
-import { MATURITY_LABELS, MATURITY_COLORS } from '../../data/constants';
 import { theme } from '../../styles/theme';
 
-export function Footer() {
-  const { categories, categoryNames } = useData();
-
+export function Footer({ onStartWorkshop, workshopActive }) {
   return (
     <footer style={{
       marginTop: theme.spacing.xxxxl,
       paddingTop: theme.spacing.lg,
-      borderTop: '1px solid ' + theme.colors.border,
+      borderTop: '1px solid ' + theme.colors.borderLight,
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
       flexWrap: 'wrap',
       gap: theme.spacing.sm,
     }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14 }}>
-        {categoryNames.map(cat => (
-          <span key={cat} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: theme.radii.sm, background: categories[cat]?.color }} />
-            <span style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textFaint }}>{cat}</span>
-          </span>
-        ))}
-      </div>
-      <div style={{ display: 'flex', gap: 12 }}>
-        {MATURITY_LABELS.slice(1).map((label, idx) => (
-          <span key={label} style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-            <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: theme.radii.circle, background: MATURITY_COLORS[idx + 1] }} />
-            <span style={{ fontSize: theme.typography.sizes.sm, color: theme.colors.textFaint }}>{label}</span>
-          </span>
-        ))}
-      </div>
+      <span style={{
+        fontSize: theme.typography.sizes.sm,
+        fontWeight: theme.typography.weights.semibold,
+        color: theme.colors.textFaint,
+        letterSpacing: '0.04em',
+      }}>
+        MMG Management Consulting
+      </span>
+
+      {onStartWorkshop && !workshopActive && (
+        <button
+          onClick={onStartWorkshop}
+          style={{
+            padding: '6px 14px',
+            borderRadius: theme.radii.lg,
+            border: '1px solid ' + theme.colors.borderMedium,
+            background: theme.colors.surface,
+            color: theme.colors.textTertiary,
+            fontSize: theme.typography.sizes.sm,
+            fontWeight: theme.typography.weights.medium,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            transition: `all ${theme.transitions.fast}`,
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = theme.colors.primary; e.currentTarget.style.color = theme.colors.primaryDark; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = theme.colors.borderMedium; e.currentTarget.style.color = theme.colors.textTertiary; }}
+        >
+          Start Workshop
+        </button>
+      )}
     </footer>
   );
 }

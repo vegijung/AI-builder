@@ -53,10 +53,10 @@ export function GlobalSearch({ search, onNavigate }) {
   const handleSelect = (result) => {
     setIsOpen(false);
     search.clearSearch();
-    if (result.type === 'useCase') onNavigate?.({ tab: 'explorer', filter: { area: result.item.valueChainArea } });
-    else if (result.type === 'block') onNavigate?.({ tab: 'explorer', filter: { block: result.item.name } });
-    else if (result.type === 'category') onNavigate?.({ tab: 'explorer', filter: { category: result.item } });
-    else if (result.type === 'area') onNavigate?.({ tab: 'explorer', filter: { area: result.item } });
+    if (result.type === 'useCase') onNavigate?.({ tab: 'explore', filter: { area: result.item.valueChainArea } });
+    else if (result.type === 'block') onNavigate?.({ tab: 'explore', filter: { block: result.item.name } });
+    else if (result.type === 'category') onNavigate?.({ tab: 'explore', filter: { category: result.item } });
+    else if (result.type === 'area') onNavigate?.({ tab: 'explore', filter: { area: result.item } });
   };
 
   const typeLabels = { useCase: 'Use Cases', block: 'Building Blocks', category: 'Categories', area: 'Value Chain' };

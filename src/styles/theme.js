@@ -21,13 +21,13 @@ export const theme = {
     activitySupport: '#5BC8D4',
     inactive: '#e8e4e0',
   },
-  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 28, xxxxl: 32, page: 36 },
+  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, xxxl: 40, xxxxl: 48, page: 48 },
   typography: {
     fontFamily: "'DM Sans', sans-serif",
-    sizes: { xs: 8, sm: 9, base: 10, md: 11, lg: 12, xl: 13, xxl: 14, heading: 20, stat: 22, statLarge: 26 },
+    sizes: { xs: 10, sm: 11, base: 13, md: 14, lg: 15, xl: 16, xxl: 18, heading: 26, stat: 28, statLarge: 34 },
     weights: { regular: 400, medium: 500, semibold: 600, bold: 700, black: 800 },
   },
-  radii: { sm: 2, md: 4, lg: 6, xl: 8, pill: 10, circle: '50%' },
+  radii: { sm: 4, md: 6, lg: 8, xl: 12, pill: 16, circle: '50%' },
   shadows: {
     card: '0 1px 3px rgba(42,37,32,0.06), 0 1px 2px rgba(42,37,32,0.04)',
     cardHover: '0 4px 12px rgba(42,37,32,0.10), 0 2px 4px rgba(42,37,32,0.06)',
