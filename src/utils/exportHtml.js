@@ -1,5 +1,5 @@
 import { computeQuadrant, getQuadrantLabel, getQuadrantColor } from './workshop';
-import { computeReadinessScore } from './assessment';
+import { computeReadinessScore, computeDimensionScores } from './assessment';
 import { getUseCaseAvgMaturity, getMaturityLevel } from './maturity';
 import { READINESS_DIMENSIONS, ROADMAP_PHASES, MATURITY_LABELS, MATURITY_COLORS } from '../data/constants';
 
@@ -129,10 +129,11 @@ export function generateWorkshopHtml(workshopName, assessment, priorities, roadm
   if (assessment?.isComplete) {
     const score = computeReadinessScore(assessment.readinessRatings);
     const ml = getMaturityLevel(score);
+    const dimScores = computeDimensionScores(assessment.readinessRatings);
     const dimRows = READINESS_DIMENSIONS.map(dim =>
       `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;">
         <span style="font-size:12px;color:#8E8E93;">${dim.label}</span>
-        <span style="font-size:14px;font-weight:700;color:#2A2520;">${assessment.readinessRatings[dim.id]}/5</span>
+        <span style="font-size:14px;font-weight:700;color:#2A2520;">${(dimScores[dim.id] ?? 0).toFixed(1)}/5</span>
       </div>`
     ).join('');
 

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { generateWorkshopReport, computeQuadrant, getQuadrantLabel, getQuadrantColor } from '../../utils/workshop';
-import { computeReadinessScore } from '../../utils/assessment';
+import { computeReadinessScore, computeDimensionScores } from '../../utils/assessment';
 import { getUseCaseAvgMaturity, getMaturityLevel } from '../../utils/maturity';
 import { generateWorkshopHtml, openHtmlReport } from '../../utils/exportHtml';
 import { READINESS_DIMENSIONS, ROADMAP_PHASES } from '../../data/constants';
@@ -19,6 +19,11 @@ export function WorkshopReport({ workshopName, assessment, priorities, roadmapSh
   const readinessScore = useMemo(() => {
     if (!assessment?.isComplete) return 0;
     return computeReadinessScore(assessment.readinessRatings);
+  }, [assessment]);
+
+  const dimensionScores = useMemo(() => {
+    if (!assessment?.isComplete) return {};
+    return computeDimensionScores(assessment.readinessRatings);
   }, [assessment]);
 
   const prioritized = useMemo(() => {
@@ -104,7 +109,7 @@ export function WorkshopReport({ workshopName, assessment, priorities, roadmapSh
                 <div key={dim.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textMuted }}>{dim.label}</span>
                   <span style={{ fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.bold, color: theme.colors.textPrimary }}>
-                    {assessment.readinessRatings[dim.id]}/5
+                    {(dimensionScores[dim.id] ?? 0).toFixed(1)}/5
                   </span>
                 </div>
               ))}

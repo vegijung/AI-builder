@@ -1,13 +1,15 @@
-import { READINESS_DIMENSIONS, ADOPTION_LEVELS } from '../../data/constants';
+import { READINESS_DIMENSIONS, ADOPTION_LEVELS, STRATEGIC_PRIORITIES, INDUSTRIES, COMPANY_SIZES } from '../../data/constants';
 import { useData } from '../../contexts/DataContext';
-import { SectionLabel } from '../shared/SectionLabel';
 import { GapAnalysis } from '../assessment/GapAnalysis';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { theme } from '../../styles/theme';
 
+const STEP_LABELS = ['About You', 'Select Areas', 'Adoption', 'Readiness', 'Priorities', 'Results'];
+const TOTAL_STEPS = STEP_LABELS.length;
+
 function StepIndicator({ current, total }) {
   return (
-    <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+    <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
       {Array.from({ length: total }, (_, i) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{
@@ -24,7 +26,7 @@ function StepIndicator({ current, total }) {
             fontSize: theme.typography.sizes.lg, fontWeight: i === current ? theme.typography.weights.bold : theme.typography.weights.medium,
             color: i <= current ? theme.colors.textPrimary : theme.colors.textMuted,
           }}>
-            {['Select Areas', 'Rate Maturity', 'Readiness', 'Results'][i]}
+            {STEP_LABELS[i]}
           </span>
           {i < total - 1 && <div style={{ width: 24, height: 1, background: theme.colors.borderLight }} />}
         </div>
@@ -54,17 +56,64 @@ function RatingSlider({ value, onChange, labels }) {
   );
 }
 
+function NavButtons({ onBack, onNext, nextLabel, nextDisabled }) {
+  return (
+    <div style={{ display: 'flex', gap: 8, marginTop: 24 }}>
+      {onBack && (
+        <button onClick={onBack} style={{
+          padding: '12px 24px', borderRadius: theme.radii.xl, border: '1px solid ' + theme.colors.borderStrong,
+          background: theme.colors.surface, color: theme.colors.textTertiary, fontSize: theme.typography.sizes.xxl,
+          fontWeight: theme.typography.weights.semibold, cursor: 'pointer', fontFamily: 'inherit',
+        }}>
+          &larr; Back
+        </button>
+      )}
+      <button onClick={onNext} disabled={nextDisabled} style={{
+        padding: '12px 32px', borderRadius: theme.radii.xl, border: 'none',
+        background: nextDisabled ? theme.colors.borderMedium : theme.colors.textPrimary,
+        color: nextDisabled ? theme.colors.textDisabled : theme.colors.primary,
+        fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold,
+        cursor: nextDisabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+      }}>
+        {nextLabel}
+      </button>
+    </div>
+  );
+}
+
+const selectStyle = {
+  width: '100%', padding: '10px 12px', borderRadius: theme.radii.lg,
+  border: '1px solid ' + theme.colors.borderMedium, background: theme.colors.surface,
+  fontSize: theme.typography.sizes.xl, fontFamily: theme.typography.fontFamily,
+  color: theme.colors.textPrimary, outline: 'none', boxSizing: 'border-box',
+  cursor: 'pointer', appearance: 'auto',
+};
+
+const inputStyle = {
+  ...selectStyle, cursor: 'text', appearance: 'none',
+};
+
+const fieldLabel = {
+  display: 'block', fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.semibold,
+  color: theme.colors.textSecondary, marginBottom: 4,
+};
+
 export function AssessmentTab({ assessment, onAddToRoadmap }) {
   const { useCases, valueChainAreaNames, valueChainShortLabels } = useData();
   const { isMobile } = useBreakpoint();
-  const { selectedAreas, areaRatings, readinessRatings, step, isComplete, leadSubmitted,
-    toggleArea, setAreaRating, setReadinessRating, setStep, completeAssessment, resetAssessment, setLeadSubmitted } = assessment;
+  const {
+    companyProfile, selectedAreas, areaRatings, readinessRatings, priorities,
+    step, isComplete, leadSubmitted,
+    setCompanyProfile, toggleArea, setAreaRating, setReadinessRating, togglePriority,
+    setStep, completeAssessment, resetAssessment, setLeadSubmitted,
+  } = assessment;
 
-  if (step === 3 && isComplete) {
+  // Step 5: Results
+  if (step === 5 && isComplete) {
     return (
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <StepIndicator current={3} total={4} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+          <StepIndicator current={5} total={TOTAL_STEPS} />
           <button onClick={resetAssessment} style={{
             padding: '6px 14px', borderRadius: theme.radii.lg, border: '1px solid ' + theme.colors.borderStrong,
             background: theme.colors.surface, color: theme.colors.textTertiary, fontSize: theme.typography.sizes.md,
@@ -79,6 +128,8 @@ export function AssessmentTab({ assessment, onAddToRoadmap }) {
           onAddToRoadmap={onAddToRoadmap}
           isMobile={isMobile}
           selectedAreas={selectedAreas}
+          priorities={priorities}
+          companyProfile={companyProfile}
           leadSubmitted={leadSubmitted}
           onLeadSubmitted={setLeadSubmitted}
         />
@@ -88,9 +139,44 @@ export function AssessmentTab({ assessment, onAddToRoadmap }) {
 
   return (
     <div style={{ maxWidth: 750, animation: 'fadeIn 0.3s ease-out' }}>
-      <StepIndicator current={step} total={4} />
+      <StepIndicator current={step} total={TOTAL_STEPS} />
 
+      {/* Step 0: About You */}
       {step === 0 && (
+        <div>
+          <h2 style={{ fontSize: 18, fontWeight: theme.typography.weights.black, color: theme.colors.textPrimary, marginBottom: 4 }}>
+            Let&rsquo;s personalize your assessment
+          </h2>
+          <p style={{ fontSize: theme.typography.sizes.xxl, color: theme.colors.textTertiary, marginBottom: 20 }}>
+            This helps us tailor recommendations to your context. All fields are optional.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <label style={fieldLabel}>Industry</label>
+              <select value={companyProfile.industry} onChange={e => setCompanyProfile({ ...companyProfile, industry: e.target.value })} style={selectStyle}>
+                <option value="">Select your industry...</option>
+                {INDUSTRIES.map(ind => <option key={ind} value={ind}>{ind}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={fieldLabel}>Company Size</label>
+              <select value={companyProfile.companySize} onChange={e => setCompanyProfile({ ...companyProfile, companySize: e.target.value })} style={selectStyle}>
+                <option value="">Select company size...</option>
+                {COMPANY_SIZES.map(s => <option key={s} value={s}>{s} employees</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={fieldLabel}>Your Role / Title</label>
+              <input type="text" value={companyProfile.role} onChange={e => setCompanyProfile({ ...companyProfile, role: e.target.value })}
+                placeholder="e.g. Head of Digital, CTO, COO" maxLength={100} style={inputStyle} />
+            </div>
+          </div>
+          <NavButtons onNext={() => setStep(1)} nextLabel="Next: Select Areas &rarr;" />
+        </div>
+      )}
+
+      {/* Step 1: Select Areas */}
+      {step === 1 && (
         <div>
           <h2 style={{ fontSize: 18, fontWeight: theme.typography.weights.black, color: theme.colors.textPrimary, marginBottom: 4 }}>
             Which areas of your organization are you assessing?
@@ -116,25 +202,23 @@ export function AssessmentTab({ assessment, onAddToRoadmap }) {
               );
             })}
           </div>
-          <button onClick={() => setStep(1)} disabled={!selectedAreas.length} style={{
-            marginTop: 24, padding: '12px 32px', borderRadius: theme.radii.xl, border: 'none',
-            background: selectedAreas.length ? theme.colors.textPrimary : theme.colors.borderMedium,
-            color: selectedAreas.length ? theme.colors.primary : theme.colors.textDisabled,
-            fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold,
-            cursor: selectedAreas.length ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
-          }}>
-            Next: Rate Maturity &rarr;
-          </button>
+          <NavButtons
+            onBack={() => setStep(0)}
+            onNext={() => setStep(2)}
+            nextLabel="Next: Rate Adoption &rarr;"
+            nextDisabled={!selectedAreas.length}
+          />
         </div>
       )}
 
-      {step === 1 && (
+      {/* Step 2: Rate Adoption */}
+      {step === 2 && (
         <div>
           <h2 style={{ fontSize: 18, fontWeight: theme.typography.weights.black, color: theme.colors.textPrimary, marginBottom: 4 }}>
             Rate your current AI adoption in each area
           </h2>
           <p style={{ fontSize: theme.typography.sizes.xxl, color: theme.colors.textTertiary, marginBottom: 20 }}>
-            How advanced is your organization's AI usage in these value chain areas?
+            How advanced is your organization&rsquo;s AI usage in these value chain areas?
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {selectedAreas.map(area => (
@@ -153,67 +237,125 @@ export function AssessmentTab({ assessment, onAddToRoadmap }) {
               </div>
             ))}
           </div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 24 }}>
-            <button onClick={() => setStep(0)} style={{
-              padding: '12px 24px', borderRadius: theme.radii.xl, border: '1px solid ' + theme.colors.borderStrong,
-              background: theme.colors.surface, color: theme.colors.textTertiary, fontSize: theme.typography.sizes.xxl,
-              fontWeight: theme.typography.weights.semibold, cursor: 'pointer', fontFamily: 'inherit',
-            }}>
-              &larr; Back
-            </button>
-            <button onClick={() => setStep(2)} style={{
-              padding: '12px 32px', borderRadius: theme.radii.xl, border: 'none',
-              background: theme.colors.textPrimary, color: theme.colors.primary,
-              fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, cursor: 'pointer', fontFamily: 'inherit',
-            }}>
-              Next: Readiness &rarr;
-            </button>
-          </div>
+          <NavButtons
+            onBack={() => setStep(1)}
+            onNext={() => setStep(3)}
+            nextLabel="Next: Readiness Deep-Dive &rarr;"
+          />
         </div>
       )}
 
-      {step === 2 && (
+      {/* Step 3: Readiness Deep-Dive (12 sub-questions) */}
+      {step === 3 && (
         <div>
           <h2 style={{ fontSize: 18, fontWeight: theme.typography.weights.black, color: theme.colors.textPrimary, marginBottom: 4 }}>
             Assess your organizational readiness
           </h2>
           <p style={{ fontSize: theme.typography.sizes.xxl, color: theme.colors.textTertiary, marginBottom: 20 }}>
-            Rate your organization's capabilities across these foundational dimensions.
+            Rate your organization across 12 key capability areas. This takes about 2 minutes.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {READINESS_DIMENSIONS.map(dim => (
-              <div key={dim.id} style={{
-                background: theme.colors.surface, border: '1px solid ' + theme.colors.border, borderRadius: theme.radii.xl,
-                padding: 16, boxShadow: theme.shadows.card,
-              }}>
-                <div style={{ fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, color: theme.colors.textPrimary, marginBottom: 2 }}>
-                  {dim.label}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {READINESS_DIMENSIONS.map(dim => {
+              const subScores = dim.subQuestions.map(sq => readinessRatings[sq.id] || 3);
+              const avg = (subScores.reduce((a, b) => a + b, 0) / subScores.length).toFixed(1);
+              return (
+                <div key={dim.id} style={{
+                  background: theme.colors.surface, border: '1px solid ' + theme.colors.border, borderRadius: theme.radii.xl,
+                  padding: 20, boxShadow: theme.shadows.card,
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: theme.typography.weights.black, color: theme.colors.textPrimary }}>
+                      {dim.label}
+                    </h3>
+                    <span style={{
+                      padding: '4px 10px', borderRadius: theme.radii.lg,
+                      background: theme.colors.primary + '15', color: theme.colors.primary,
+                      fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.bold,
+                    }}>
+                      Avg: {avg}/5
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {dim.subQuestions.map(sq => (
+                      <div key={sq.id}>
+                        <div style={{ fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.bold, color: theme.colors.textPrimary, marginBottom: 2 }}>
+                          {sq.label}
+                        </div>
+                        <div style={{ fontSize: theme.typography.sizes.lg, color: theme.colors.textMuted, marginBottom: 8 }}>
+                          {sq.description}
+                        </div>
+                        <RatingSlider
+                          value={readinessRatings[sq.id] || 3}
+                          onChange={(v) => setReadinessRating(sq.id, v)}
+                          labels={['Very Low', 'Low', 'Medium', 'High', 'Very High']}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div style={{ fontSize: theme.typography.sizes.lg, color: theme.colors.textMuted, marginBottom: 10 }}>{dim.description}</div>
-                <RatingSlider
-                  value={readinessRatings[dim.id] || 3}
-                  onChange={(v) => setReadinessRating(dim.id, v)}
-                  labels={['Very Low', 'Low', 'Medium', 'High', 'Very High']}
-                />
-              </div>
-            ))}
+              );
+            })}
           </div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 24 }}>
-            <button onClick={() => setStep(1)} style={{
-              padding: '12px 24px', borderRadius: theme.radii.xl, border: '1px solid ' + theme.colors.borderStrong,
-              background: theme.colors.surface, color: theme.colors.textTertiary, fontSize: theme.typography.sizes.xxl,
-              fontWeight: theme.typography.weights.semibold, cursor: 'pointer', fontFamily: 'inherit',
-            }}>
-              &larr; Back
-            </button>
-            <button onClick={completeAssessment} style={{
-              padding: '12px 32px', borderRadius: theme.radii.xl, border: 'none',
-              background: theme.colors.textPrimary, color: theme.colors.primary,
-              fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, cursor: 'pointer', fontFamily: 'inherit',
-            }}>
-              View Results &rarr;
-            </button>
+          <NavButtons
+            onBack={() => setStep(2)}
+            onNext={() => setStep(4)}
+            nextLabel="Next: Strategic Priorities &rarr;"
+          />
+        </div>
+      )}
+
+      {/* Step 4: Strategic Priorities */}
+      {step === 4 && (
+        <div>
+          <h2 style={{ fontSize: 18, fontWeight: theme.typography.weights.black, color: theme.colors.textPrimary, marginBottom: 4 }}>
+            What are your top strategic goals?
+          </h2>
+          <p style={{ fontSize: theme.typography.sizes.xxl, color: theme.colors.textTertiary, marginBottom: 20 }}>
+            Select up to 3 priorities. This shapes which use cases we recommend for you.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {STRATEGIC_PRIORITIES.map(p => {
+              const sel = priorities.includes(p.id);
+              const maxed = priorities.length >= 3 && !sel;
+              return (
+                <button key={p.id} onClick={() => togglePriority(p.id)} disabled={maxed} style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 14, textAlign: 'left',
+                  padding: '16px 20px', borderRadius: theme.radii.xl, cursor: maxed ? 'not-allowed' : 'pointer',
+                  border: sel ? '2px solid ' + theme.colors.primary : '1px solid ' + theme.colors.borderMedium,
+                  background: sel ? theme.colors.primary + '10' : theme.colors.surface,
+                  fontFamily: 'inherit', transition: `all ${theme.transitions.fast}`,
+                  opacity: maxed ? 0.5 : 1,
+                }}>
+                  <span style={{
+                    display: 'inline-flex', width: 24, height: 24, borderRadius: theme.radii.circle, flexShrink: 0, marginTop: 2,
+                    border: sel ? '2px solid ' + theme.colors.primary : '2px solid ' + theme.colors.borderMedium,
+                    background: sel ? theme.colors.primary : 'transparent',
+                    alignItems: 'center', justifyContent: 'center',
+                    color: '#fff', fontSize: 14, fontWeight: theme.typography.weights.black,
+                  }}>
+                    {sel && '\u2713'}
+                  </span>
+                  <div>
+                    <div style={{ fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, color: theme.colors.textPrimary, marginBottom: 2 }}>
+                      {p.label}
+                    </div>
+                    <div style={{ fontSize: theme.typography.sizes.lg, color: theme.colors.textMuted }}>
+                      {p.description}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
+          <p style={{ fontSize: theme.typography.sizes.lg, color: theme.colors.textMuted, marginTop: 12 }}>
+            {priorities.length}/3 selected
+          </p>
+          <NavButtons
+            onBack={() => setStep(3)}
+            onNext={completeAssessment}
+            nextLabel="View Results &rarr;"
+            nextDisabled={!priorities.length}
+          />
         </div>
       )}
     </div>

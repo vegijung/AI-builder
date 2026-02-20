@@ -20,11 +20,56 @@ export const VALUE_CHAIN_SHORT_LABELS = {
 export const VALUE_CHAIN_AREAS = [...new Set(USE_CASES.map(uc => uc.valueChainArea))].sort();
 
 export const READINESS_DIMENSIONS = [
-  { id: 'data', label: 'Data Readiness', description: 'Clean, accessible, well-governed data' },
-  { id: 'infra', label: 'Technical Infrastructure', description: 'Cloud, APIs, ML platforms, integration capability' },
-  { id: 'talent', label: 'Talent & Skills', description: 'AI/ML expertise, data literacy across teams' },
-  { id: 'leadership', label: 'Leadership Buy-in', description: 'Executive sponsorship, budget allocation, change management' },
+  {
+    id: 'data', label: 'Data Readiness',
+    subQuestions: [
+      { id: 'data_governance', label: 'Data Governance', description: 'Clear data ownership, policies, and compliance processes' },
+      { id: 'data_accessibility', label: 'Data Accessibility', description: 'Integrated systems, APIs, and a single source of truth' },
+      { id: 'data_quality', label: 'Data Quality', description: 'Clean, consistent, and well-labeled datasets' },
+    ],
+  },
+  {
+    id: 'infra', label: 'Technical Infrastructure',
+    subQuestions: [
+      { id: 'infra_cloud', label: 'Cloud & Compute', description: 'Cloud-native, scalable compute infrastructure' },
+      { id: 'infra_integration', label: 'Integration Capability', description: 'APIs, middleware, and system interoperability' },
+      { id: 'infra_ml', label: 'ML/AI Platforms', description: 'Tooling, MLOps pipelines, and model serving' },
+    ],
+  },
+  {
+    id: 'talent', label: 'Talent & Skills',
+    subQuestions: [
+      { id: 'talent_expertise', label: 'AI/ML Expertise', description: 'Dedicated data science or AI engineering team' },
+      { id: 'talent_literacy', label: 'Data Literacy', description: 'Organization-wide understanding of data-driven decisions' },
+      { id: 'talent_change', label: 'Change Management', description: 'Ability to adopt new tools and processes across teams' },
+    ],
+  },
+  {
+    id: 'leadership', label: 'Leadership & Strategy',
+    subQuestions: [
+      { id: 'leadership_sponsor', label: 'Executive Sponsorship', description: 'C-level champion actively driving AI initiatives' },
+      { id: 'leadership_budget', label: 'Budget Allocation', description: 'Dedicated AI/innovation budget secured' },
+      { id: 'leadership_alignment', label: 'Strategic Alignment', description: 'AI initiatives tied directly to business strategy' },
+    ],
+  },
 ];
+
+export const ALL_READINESS_KEYS = READINESS_DIMENSIONS.flatMap(d => d.subQuestions.map(sq => sq.id));
+
+export const STRATEGIC_PRIORITIES = [
+  { id: 'cost', label: 'Cost Reduction & Efficiency', description: 'Automate manual work, reduce operational costs, streamline processes', areas: ['Firm Infrastructure', 'Operations', 'Logistics', 'Procurement'], categories: ['Automation & Execution'] },
+  { id: 'revenue', label: 'Revenue Growth & New Business', description: 'Find new customers, increase sales, expand market reach', areas: ['Marketing / Sales', 'Product Management', 'Business Direction / Management'], categories: ['Prediction & Optimization', 'Generation & Creativity'] },
+  { id: 'cx', label: 'Customer Experience & Retention', description: 'Improve service quality, personalize interactions, reduce churn', areas: ['Service', 'Marketing / Sales'], categories: ['Interaction & Assistance', 'Understanding & Summarization'] },
+  { id: 'ops', label: 'Operational Excellence & Quality', description: 'Improve consistency, reduce errors, enhance monitoring', areas: ['Operations', 'Firm Infrastructure', 'Technology'], categories: ['Prediction & Optimization', 'Extraction & Structuring'] },
+  { id: 'innovation', label: 'Innovation & Speed to Market', description: 'Accelerate product development, experiment faster, stay ahead', areas: ['Technology', 'Product Management'], categories: ['Coding & Development', 'Generation & Creativity'] },
+];
+
+export const INDUSTRIES = [
+  'Financial Services', 'Manufacturing', 'Retail & E-Commerce', 'Healthcare',
+  'Technology', 'Professional Services', 'Energy & Utilities', 'Public Sector', 'Other',
+];
+
+export const COMPANY_SIZES = ['1-50', '51-200', '201-1,000', '1,001-5,000', '5,000+'];
 
 export const ADOPTION_LEVELS = [
   { score: 1, label: 'None', description: 'No AI initiatives in this area' },

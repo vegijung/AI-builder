@@ -3,12 +3,7 @@ import { theme } from '../../styles/theme';
 import { submitAssessmentLead } from '../../services/dataService';
 import { isSupabaseConfigured } from '../../services/supabase';
 
-const INDUSTRIES = [
-  'Financial Services', 'Manufacturing', 'Retail & E-Commerce', 'Healthcare',
-  'Technology', 'Professional Services', 'Energy & Utilities', 'Public Sector', 'Other',
-];
-
-const COMPANY_SIZES = ['1-50', '51-200', '201-1,000', '1,001-5,000', '5,000+'];
+import { INDUSTRIES, COMPANY_SIZES } from '../../data/constants';
 
 const BOOKING_URL = import.meta.env.VITE_BOOKING_URL || null;
 const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
@@ -53,8 +48,12 @@ const labelStyle = {
   color: theme.colors.textSecondary, marginBottom: 4,
 };
 
-export function LeadCaptureCard({ selectedAreas, areaRatings, readinessRatings, overallScore, leadSubmitted, onLeadSubmitted }) {
-  const [form, setForm] = useState({ name: '', email: '', company: '', industry: '', companySize: '' });
+export function LeadCaptureCard({ selectedAreas, areaRatings, readinessRatings, overallScore, companyProfile, priorities, leadSubmitted, onLeadSubmitted }) {
+  const [form, setForm] = useState({
+    name: '', email: '', company: '',
+    industry: companyProfile?.industry || '',
+    companySize: companyProfile?.companySize || '',
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
@@ -79,6 +78,7 @@ export function LeadCaptureCard({ selectedAreas, areaRatings, readinessRatings, 
         areaRatings,
         readinessRatings,
         overallScore,
+        priorities: priorities || [],
       };
       await submitAssessmentLead(leadData);
       sendEmailNotification(leadData);

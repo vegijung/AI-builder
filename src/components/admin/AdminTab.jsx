@@ -12,7 +12,7 @@ import {
   fetchAssessmentLeads, deleteAssessmentLead,
 } from '../../services/dataService';
 import { isSupabaseConfigured } from '../../services/supabase';
-import { READINESS_DIMENSIONS } from '../../data/constants';
+import { READINESS_DIMENSIONS, STRATEGIC_PRIORITIES } from '../../data/constants';
 import { theme } from '../../styles/theme';
 
 export function AdminTab({ onSignOut, userEmail }) {
@@ -283,7 +283,11 @@ export function AdminTab({ onSignOut, userEmail }) {
               const isExpanded = expandedLead === lead.id;
               const date = new Date(lead.created_at);
               const dimLabels = {};
-              READINESS_DIMENSIONS.forEach(d => { dimLabels[d.id] = d.label; });
+              READINESS_DIMENSIONS.forEach(d => {
+                dimLabels[d.id] = d.label;
+                if (d.subQuestions) d.subQuestions.forEach(sq => { dimLabels[sq.id] = sq.label; });
+              });
+              const priorityLabels = Object.fromEntries(STRATEGIC_PRIORITIES.map(p => [p.id, p.label]));
               return (
                 <div key={lead.id} style={{
                   background: theme.colors.surface, border: '1px solid ' + theme.colors.border, borderRadius: theme.radii.xl,
@@ -388,6 +392,21 @@ export function AdminTab({ onSignOut, userEmail }) {
                             </div>
                           ))}
                         </div>
+                        {lead.priorities && lead.priorities.length > 0 && (
+                          <div>
+                            <div style={{ fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.semibold, color: theme.colors.textMuted, marginBottom: 4 }}>Priorities</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                              {lead.priorities.map(pId => (
+                                <span key={pId} style={{
+                                  padding: '2px 8px', borderRadius: theme.radii.md, background: theme.colors.primary + '15',
+                                  fontSize: theme.typography.sizes.base, color: theme.colors.primary, fontWeight: theme.typography.weights.semibold,
+                                }}>
+                                  {priorityLabels[pId] || pId}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
                         <button onClick={(e) => { e.stopPropagation(); handleDeleteLead(lead.id); }} style={{

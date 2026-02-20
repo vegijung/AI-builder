@@ -203,19 +203,22 @@ export async function deleteUseCase(name) {
 export async function submitAssessmentLead(lead) {
   if (!isSupabaseConfigured()) throw new Error('Supabase is not configured');
 
+  const row = {
+    name: lead.name,
+    email: lead.email,
+    company: lead.company,
+    industry: lead.industry || null,
+    company_size: lead.companySize || null,
+    selected_areas: lead.selectedAreas,
+    area_ratings: lead.areaRatings,
+    readiness_ratings: lead.readinessRatings,
+    overall_score: lead.overallScore,
+  };
+  if (lead.priorities) row.priorities = lead.priorities;
+
   const { data, error } = await supabase
     .from('assessment_leads')
-    .insert({
-      name: lead.name,
-      email: lead.email,
-      company: lead.company,
-      industry: lead.industry || null,
-      company_size: lead.companySize || null,
-      selected_areas: lead.selectedAreas,
-      area_ratings: lead.areaRatings,
-      readiness_ratings: lead.readinessRatings,
-      overall_score: lead.overallScore,
-    })
+    .insert(row)
     .select();
 
   if (error) {

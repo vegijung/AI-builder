@@ -1,25 +1,82 @@
 import { useMemo } from 'react';
 import { computeGapAnalysis, computeReadinessScore, getRecommendedUseCases } from '../../utils/assessment';
-import { getUseCaseAvgMaturity, getMaturityLevel } from '../../utils/maturity';
+import { getMaturityLevel } from '../../utils/maturity';
 import { useData } from '../../contexts/DataContext';
 import { SectionLabel } from '../shared/SectionLabel';
 import { MaturityBadge } from '../shared/MaturityBadge';
-import { MaturityDots } from '../shared/MaturityDots';
 import { ReadinessRadar } from './ReadinessRadar';
 import { LeadCaptureCard } from './LeadCaptureCard';
+import { STRATEGIC_PRIORITIES } from '../../data/constants';
 import { theme } from '../../styles/theme';
 
-export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isMobile, selectedAreas, leadSubmitted, onLeadSubmitted }) {
+const priorityMap = Object.fromEntries(STRATEGIC_PRIORITIES.map(p => [p.id, p.label]));
+
+function ProfileSummary({ companyProfile, priorities }) {
+  const hasProfile = companyProfile && (companyProfile.industry || companyProfile.companySize || companyProfile.role);
+  const hasPriorities = priorities && priorities.length > 0;
+  if (!hasProfile && !hasPriorities) return null;
+
+  return (
+    <div style={{
+      background: theme.colors.surface, border: '1px solid ' + theme.colors.border, borderRadius: theme.radii.xl,
+      padding: 16, marginBottom: 24, boxShadow: theme.shadows.card,
+    }}>
+      <div style={{ fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.bold, color: theme.colors.textPrimary, marginBottom: 8 }}>
+        Your Profile
+      </div>
+      {hasProfile && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: hasPriorities ? 10 : 0 }}>
+          {companyProfile.industry && (
+            <span style={{ padding: '4px 10px', borderRadius: theme.radii.lg, background: theme.colors.surfaceMuted, fontSize: theme.typography.sizes.lg, color: theme.colors.textSecondary }}>
+              {companyProfile.industry}
+            </span>
+          )}
+          {companyProfile.companySize && (
+            <span style={{ padding: '4px 10px', borderRadius: theme.radii.lg, background: theme.colors.surfaceMuted, fontSize: theme.typography.sizes.lg, color: theme.colors.textSecondary }}>
+              {companyProfile.companySize} employees
+            </span>
+          )}
+          {companyProfile.role && (
+            <span style={{ padding: '4px 10px', borderRadius: theme.radii.lg, background: theme.colors.surfaceMuted, fontSize: theme.typography.sizes.lg, color: theme.colors.textSecondary }}>
+              {companyProfile.role}
+            </span>
+          )}
+        </div>
+      )}
+      {hasPriorities && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          <span style={{ fontSize: theme.typography.sizes.lg, color: theme.colors.textMuted, marginRight: 4, alignSelf: 'center' }}>Priorities:</span>
+          {priorities.map(pId => (
+            <span key={pId} style={{
+              padding: '3px 10px', borderRadius: theme.radii.lg,
+              background: theme.colors.primary + '15', color: theme.colors.primary,
+              fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.semibold,
+            }}>
+              {priorityMap[pId] || pId}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isMobile, selectedAreas, priorities, companyProfile, leadSubmitted, onLeadSubmitted }) {
   const { valueChainShortLabels, useCases, buildingBlockMap } = useData();
 
   const gaps = useMemo(() => computeGapAnalysis(areaRatings, useCases, buildingBlockMap), [areaRatings, useCases, buildingBlockMap]);
   const readinessScore = useMemo(() => computeReadinessScore(readinessRatings), [readinessRatings]);
-  const recommendations = useMemo(() => getRecommendedUseCases(areaRatings, readinessRatings, 10, useCases, buildingBlockMap), [areaRatings, readinessRatings, useCases, buildingBlockMap]);
+  const recommendations = useMemo(
+    () => getRecommendedUseCases(areaRatings, readinessRatings, 10, useCases, buildingBlockMap, priorities),
+    [areaRatings, readinessRatings, useCases, buildingBlockMap, priorities],
+  );
 
   const overallReadiness = getMaturityLevel(readinessScore);
 
   return (
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
+      <ProfileSummary companyProfile={companyProfile} priorities={priorities} />
+
       <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 24, marginBottom: 28 }}>
         <div style={{ flex: 1 }}>
           <SectionLabel>Readiness Overview</SectionLabel>
@@ -92,13 +149,15 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isM
         areaRatings={areaRatings}
         readinessRatings={readinessRatings}
         overallScore={readinessScore}
+        companyProfile={companyProfile}
+        priorities={priorities}
         leadSubmitted={leadSubmitted}
         onLeadSubmitted={onLeadSubmitted}
       />
 
       <SectionLabel>Recommended Starting Points</SectionLabel>
       <p style={{ fontSize: theme.typography.sizes.lg, color: theme.colors.textTertiary, marginBottom: 12, marginTop: 0 }}>
-        Use cases best matched to your current maturity and readiness — sorted by fit score.
+        Use cases best matched to your current maturity, readiness, and strategic priorities — sorted by fit score.
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 'calc(100vh - 400px)', overflowY: 'auto' }}>
         {recommendations.map((rec, i) => {
@@ -124,9 +183,17 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isM
                 </span>
                 <div>
                   <span style={{ fontWeight: theme.typography.weights.bold, fontSize: theme.typography.sizes.xl, color: theme.colors.textPrimary }}>{uc.name}</span>
-                  <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 2, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: theme.typography.sizes.sm, color: theme.colors.textMuted }}>{valueChainShortLabels[uc.valueChainArea]}</span>
                     <span style={{ fontSize: theme.typography.sizes.sm, color: uc.activityType === 'Primary' ? '#3aaa88' : '#4aa8b4' }}>{uc.activityType}</span>
+                    {rec.alignedPriorities && rec.alignedPriorities.map(p => (
+                      <span key={p.id} style={{
+                        fontSize: theme.typography.sizes.sm, padding: '1px 6px', borderRadius: theme.radii.md,
+                        background: theme.colors.primary + '15', color: theme.colors.primary, fontWeight: theme.typography.weights.semibold,
+                      }}>
+                        {p.label}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import { getUseCaseAvgMaturity } from './maturity';
-import { computeReadinessScore } from './assessment';
+import { computeReadinessScore, computeDimensionScores } from './assessment';
 import { READINESS_DIMENSIONS } from '../data/constants';
 
 export function computeQuadrant(impact, feasibility) {
@@ -44,9 +44,10 @@ export function generateWorkshopReport(workshopName, assessment, priorities, roa
   if (assessment?.isComplete) {
     const score = computeReadinessScore(assessment.readinessRatings);
     lines.push(`**Overall Readiness Score**: ${score.toFixed(1)} / 5.0`, '');
+    const dimScores = computeDimensionScores(assessment.readinessRatings);
     READINESS_DIMENSIONS.forEach(dim => {
-      const val = assessment.readinessRatings[dim.id] || 0;
-      lines.push(`- ${dim.label}: ${val}/5`);
+      const val = dimScores[dim.id] ?? 0;
+      lines.push(`- ${dim.label}: ${val.toFixed(1)}/5`);
     });
     lines.push('', '**Assessed Areas**:', '');
     assessment.selectedAreas.forEach(area => {
