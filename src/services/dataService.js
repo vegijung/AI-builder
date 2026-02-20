@@ -198,3 +198,84 @@ export async function deleteUseCase(name) {
   const { error } = await supabase.from('use_cases').delete().eq('name', name);
   if (error) throw error;
 }
+
+// Bulk sync from Excel upload
+export async function syncFromExcel(buildingBlocks, useCases) {
+  const result = { blocksUpserted: 0, useCasesUpserted: 0, blocksRemoved: 0, useCasesRemoved: 0 };
+
+  // 1. Upsert building blocks
+  const bbRows = buildingBlocks.map((b, i) => ({
+    name: b.name,
+    category: b.category,
+    maturity: b.maturity,
+    sort_order: i,
+  }));
+  if (bbRows.length > 0) {
+    const { error } = await supabase
+      .from('building_blocks')
+      .upsert(bbRows, { onConflict: 'name' });
+    if (error) throw new Error('Failed to upsert building blocks: ' + error.message);
+    result.blocksUpserted = bbRows.length;
+  }
+
+  // 2. Upsert use cases
+  const ucRows = useCases.map((uc, i) => ({
+    name: uc.name,
+    activity_type: uc.activityType,
+    value_chain_area: uc.valueChainArea,
+    sort_order: i,
+  }));
+  if (ucRows.length > 0) {
+    const { data: upsertedUCs, error } = await supabase
+      .from('use_cases')
+      .upsert(ucRows, { onConflict: 'name' })
+      .select('id, name');
+    if (error) throw new Error('Failed to upsert use cases: ' + error.message);
+    result.useCasesUpserted = ucRows.length;
+
+    // 3. Replace use_case_blocks for all upserted use cases
+    const ucIdMap = {};
+    upsertedUCs.forEach(uc => { ucIdMap[uc.name] = uc.id; });
+
+    const ucIds = upsertedUCs.map(uc => uc.id);
+    await supabase.from('use_case_blocks').delete().in('use_case_id', ucIds);
+
+    const blockRows = [];
+    useCases.forEach(uc => {
+      const ucId = ucIdMap[uc.name];
+      if (ucId && uc.buildingBlocks?.length > 0) {
+        uc.buildingBlocks.forEach(blockName => {
+          blockRows.push({ use_case_id: ucId, block_name: blockName });
+        });
+      }
+    });
+    if (blockRows.length > 0) {
+      const { error: bErr } = await supabase.from('use_case_blocks').insert(blockRows);
+      if (bErr) throw new Error('Failed to insert use case blocks: ' + bErr.message);
+    }
+  }
+
+  // 4. Delete use cases not in Excel
+  const excelUCNames = useCases.map(uc => uc.name);
+  const { data: allDBUCs } = await supabase.from('use_cases').select('name');
+  if (allDBUCs) {
+    const toDeleteUCs = allDBUCs.filter(uc => !excelUCNames.includes(uc.name)).map(uc => uc.name);
+    if (toDeleteUCs.length > 0) {
+      await supabase.from('use_cases').delete().in('name', toDeleteUCs);
+      result.useCasesRemoved = toDeleteUCs.length;
+    }
+  }
+
+  // 5. Delete building blocks not in Excel
+  const excelBBNames = buildingBlocks.map(b => b.name);
+  const { data: allDBBBs } = await supabase.from('building_blocks').select('name');
+  if (allDBBBs) {
+    const toDeleteBBs = allDBBBs.filter(b => !excelBBNames.includes(b.name)).map(b => b.name);
+    if (toDeleteBBs.length > 0) {
+      await supabase.from('building_blocks').delete().in('name', toDeleteBBs);
+      result.blocksRemoved = toDeleteBBs.length;
+    }
+  }
+
+  return result;
+}

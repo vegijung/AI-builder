@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { AdminTable } from './AdminTable';
 import { BlockMultiSelect } from './BlockMultiSelect';
+import { ExcelUpload } from './ExcelUpload';
 import { SectionLabel } from '../shared/SectionLabel';
 import {
   upsertCategory, deleteCategory,
@@ -13,8 +14,9 @@ import { isSupabaseConfigured } from '../../services/supabase';
 import { theme } from '../../styles/theme';
 
 export function AdminTab({ onSignOut, userEmail }) {
-  const { categories, buildingBlocks, useCases, valueChainShortLabels, categoryNames, refetch } = useData();
+  const { categories, buildingBlocks, useCases, valueChainAreas, valueChainShortLabels, categoryNames, refetch } = useData();
   const [activeSection, setActiveSection] = useState('useCases');
+  const [showUpload, setShowUpload] = useState(false);
 
   const supabaseReady = isSupabaseConfigured();
 
@@ -107,14 +109,27 @@ export function AdminTab({ onSignOut, userEmail }) {
             )}
           </p>
         </div>
-        <button onClick={onSignOut} style={{
-          padding: '8px 16px', borderRadius: theme.radii.lg, border: '1px solid ' + theme.colors.borderStrong,
-          background: theme.colors.surface, color: theme.colors.textTertiary,
-          fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.semibold,
-          cursor: 'pointer', fontFamily: 'inherit',
-        }}>
-          Sign Out
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {supabaseReady && (
+            <button onClick={() => setShowUpload(true)} style={{
+              padding: '8px 16px', borderRadius: theme.radii.lg, border: '1px solid ' + theme.colors.primary,
+              background: theme.colors.primary + '15', color: theme.colors.primary,
+              fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.bold,
+              cursor: 'pointer', fontFamily: 'inherit',
+              transition: `all ${theme.transitions.fast}`,
+            }}>
+              Upload Excel
+            </button>
+          )}
+          <button onClick={onSignOut} style={{
+            padding: '8px 16px', borderRadius: theme.radii.lg, border: '1px solid ' + theme.colors.borderStrong,
+            background: theme.colors.surface, color: theme.colors.textTertiary,
+            fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.semibold,
+            cursor: 'pointer', fontFamily: 'inherit',
+          }}>
+            Sign Out
+          </button>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -208,6 +223,17 @@ export function AdminTab({ onSignOut, userEmail }) {
             }
             return null;
           }}
+        />
+      )}
+
+      {showUpload && (
+        <ExcelUpload
+          categories={categories}
+          buildingBlocks={buildingBlocks}
+          useCases={useCases}
+          valueChainAreas={valueChainAreas}
+          onComplete={async () => { await refetch(); setShowUpload(false); }}
+          onCancel={() => setShowUpload(false)}
         />
       )}
     </div>
