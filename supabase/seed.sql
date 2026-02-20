@@ -16,22 +16,22 @@
 
 CREATE TABLE IF NOT EXISTS categories (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name       text UNIQUE NOT NULL,
-  color      text NOT NULL,
-  abbr       text NOT NULL,
+  name       text UNIQUE NOT NULL CHECK (char_length(name) <= 200),
+  color      text NOT NULL CHECK (char_length(color) <= 20),
+  abbr       text NOT NULL CHECK (char_length(abbr) <= 20),
   sort_order integer DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS value_chain_areas (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name        text UNIQUE NOT NULL,
-  short_label text NOT NULL,
+  name        text UNIQUE NOT NULL CHECK (char_length(name) <= 200),
+  short_label text NOT NULL CHECK (char_length(short_label) <= 50),
   sort_order  integer DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS building_blocks (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name       text UNIQUE NOT NULL,
+  name       text UNIQUE NOT NULL CHECK (char_length(name) <= 200),
   category   text NOT NULL REFERENCES categories(name),
   maturity   integer NOT NULL CHECK (maturity BETWEEN 1 AND 5),
   sort_order integer DEFAULT 0
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS building_blocks (
 
 CREATE TABLE IF NOT EXISTS use_cases (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name            text UNIQUE NOT NULL,
+  name            text UNIQUE NOT NULL CHECK (char_length(name) <= 200),
   activity_type   text NOT NULL CHECK (activity_type IN ('Primary', 'Support')),
   value_chain_area text NOT NULL REFERENCES value_chain_areas(name),
   sort_order      integer DEFAULT 0
@@ -1319,6 +1319,42 @@ INSERT INTO use_case_blocks (use_case_id, block_name)
 SELECT id, 'RPA & AI Integration' FROM use_cases WHERE name = 'End-to-end process orchestration';
 INSERT INTO use_case_blocks (use_case_id, block_name)
 SELECT id, 'Reasoning & Logic' FROM use_cases WHERE name = 'End-to-end process orchestration';
+
+-- ---------------------------------------------------------------------------
+-- 6. ASSESSMENT LEADS (for lead capture)
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS assessment_leads (
+  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name              text NOT NULL CHECK (char_length(name) <= 200),
+  email             text NOT NULL CHECK (char_length(email) <= 200),
+  company           text NOT NULL CHECK (char_length(company) <= 200),
+  industry          text CHECK (char_length(industry) <= 100),
+  company_size      text CHECK (char_length(company_size) <= 50),
+  selected_areas    jsonb NOT NULL DEFAULT '[]',
+  area_ratings      jsonb NOT NULL DEFAULT '{}',
+  readiness_ratings jsonb NOT NULL DEFAULT '{}',
+  overall_score     numeric(3,1) NOT NULL DEFAULT 0,
+  created_at        timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE assessment_leads ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "assessment_leads_insert_public"
+  ON assessment_leads FOR INSERT
+  WITH CHECK (true);
+
+CREATE POLICY "assessment_leads_select_admin"
+  ON assessment_leads FOR SELECT
+  USING (auth.jwt() ->> 'email' LIKE '%@mmgmc.ch');
+
+CREATE POLICY "assessment_leads_update_admin"
+  ON assessment_leads FOR UPDATE
+  USING (auth.jwt() ->> 'email' LIKE '%@mmgmc.ch');
+
+CREATE POLICY "assessment_leads_delete_admin"
+  ON assessment_leads FOR DELETE
+  USING (auth.jwt() ->> 'email' LIKE '%@mmgmc.ch');
 
 -- =============================================================================
 -- END OF SEED FILE

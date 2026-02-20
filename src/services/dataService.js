@@ -199,6 +199,52 @@ export async function deleteUseCase(name) {
   if (error) throw error;
 }
 
+// Assessment lead capture
+export async function submitAssessmentLead(lead) {
+  if (!isSupabaseConfigured()) throw new Error('Supabase is not configured');
+
+  const { data, error } = await supabase
+    .from('assessment_leads')
+    .insert({
+      name: lead.name,
+      email: lead.email,
+      company: lead.company,
+      industry: lead.industry || null,
+      company_size: lead.companySize || null,
+      selected_areas: lead.selectedAreas,
+      area_ratings: lead.areaRatings,
+      readiness_ratings: lead.readinessRatings,
+      overall_score: lead.overallScore,
+    })
+    .select();
+
+  if (error) {
+    console.error('Submit assessment lead failed:', error.message);
+    throw new Error('Failed to submit. Please try again.');
+  }
+  return data[0];
+}
+
+export async function fetchAssessmentLeads() {
+  if (!isSupabaseConfigured()) return [];
+
+  const { data, error } = await supabase
+    .from('assessment_leads')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Fetch assessment leads failed:', error.message);
+    throw new Error('Failed to load leads.');
+  }
+  return data;
+}
+
+export async function deleteAssessmentLead(id) {
+  const { error } = await supabase.from('assessment_leads').delete().eq('id', id);
+  if (error) throw error;
+}
+
 // Deduplicate array by name, keeping the last occurrence
 function dedupeByName(arr) {
   const map = new Map();
@@ -224,7 +270,10 @@ export async function syncFromExcel(buildingBlocks, useCases) {
     const { error } = await supabase
       .from('building_blocks')
       .upsert(bbRows, { onConflict: 'name' });
-    if (error) throw new Error('Failed to upsert building blocks: ' + error.message);
+    if (error) {
+      console.error('Upsert building blocks failed:', error.message);
+      throw new Error('Failed to sync building blocks. Please try again.');
+    }
     result.blocksUpserted = bbRows.length;
   }
 
@@ -240,7 +289,10 @@ export async function syncFromExcel(buildingBlocks, useCases) {
       .from('use_cases')
       .upsert(ucRows, { onConflict: 'name' })
       .select('id, name');
-    if (error) throw new Error('Failed to upsert use cases: ' + error.message);
+    if (error) {
+      console.error('Upsert use cases failed:', error.message);
+      throw new Error('Failed to sync use cases. Please try again.');
+    }
     result.useCasesUpserted = ucRows.length;
 
     // 3. Replace use_case_blocks for all upserted use cases
@@ -261,7 +313,10 @@ export async function syncFromExcel(buildingBlocks, useCases) {
     });
     if (blockRows.length > 0) {
       const { error: bErr } = await supabase.from('use_case_blocks').insert(blockRows);
-      if (bErr) throw new Error('Failed to insert use case blocks: ' + bErr.message);
+      if (bErr) {
+        console.error('Insert use case blocks failed:', bErr.message);
+        throw new Error('Failed to sync use case associations. Please try again.');
+      }
     }
   }
 

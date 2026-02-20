@@ -1,6 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 
-const ALLOWED_DOMAIN = '@mmgmc.ch';
+const ALLOWED_DOMAIN = import.meta.env.VITE_ALLOWED_EMAIL_DOMAIN || '@mmgmc.ch';
 
 export function isAllowedEmail(email) {
   return email?.toLowerCase().endsWith(ALLOWED_DOMAIN);

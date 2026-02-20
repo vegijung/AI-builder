@@ -6,9 +6,10 @@ import { SectionLabel } from '../shared/SectionLabel';
 import { MaturityBadge } from '../shared/MaturityBadge';
 import { MaturityDots } from '../shared/MaturityDots';
 import { ReadinessRadar } from './ReadinessRadar';
+import { LeadCaptureCard } from './LeadCaptureCard';
 import { theme } from '../../styles/theme';
 
-export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isMobile }) {
+export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isMobile, selectedAreas, leadSubmitted, onLeadSubmitted }) {
   const { valueChainShortLabels, useCases, buildingBlockMap } = useData();
 
   const gaps = useMemo(() => computeGapAnalysis(areaRatings, useCases, buildingBlockMap), [areaRatings, useCases, buildingBlockMap]);
@@ -85,6 +86,15 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isM
           </div>
         </div>
       </div>
+
+      <LeadCaptureCard
+        selectedAreas={selectedAreas || Object.keys(areaRatings)}
+        areaRatings={areaRatings}
+        readinessRatings={readinessRatings}
+        overallScore={readinessScore}
+        leadSubmitted={leadSubmitted}
+        onLeadSubmitted={onLeadSubmitted}
+      />
 
       <SectionLabel>Recommended Starting Points</SectionLabel>
       <p style={{ fontSize: theme.typography.sizes.lg, color: theme.colors.textTertiary, marginBottom: 12, marginTop: 0 }}>

@@ -57,8 +57,8 @@ function RatingSlider({ value, onChange, labels }) {
 export function AssessmentTab({ assessment, onAddToRoadmap }) {
   const { useCases, valueChainAreaNames, valueChainShortLabels } = useData();
   const { isMobile } = useBreakpoint();
-  const { selectedAreas, areaRatings, readinessRatings, step, isComplete,
-    toggleArea, setAreaRating, setReadinessRating, setStep, completeAssessment, resetAssessment } = assessment;
+  const { selectedAreas, areaRatings, readinessRatings, step, isComplete, leadSubmitted,
+    toggleArea, setAreaRating, setReadinessRating, setStep, completeAssessment, resetAssessment, setLeadSubmitted } = assessment;
 
   if (step === 3 && isComplete) {
     return (
@@ -73,7 +73,15 @@ export function AssessmentTab({ assessment, onAddToRoadmap }) {
             Restart Assessment
           </button>
         </div>
-        <GapAnalysis areaRatings={areaRatings} readinessRatings={readinessRatings} onAddToRoadmap={onAddToRoadmap} isMobile={isMobile} />
+        <GapAnalysis
+          areaRatings={areaRatings}
+          readinessRatings={readinessRatings}
+          onAddToRoadmap={onAddToRoadmap}
+          isMobile={isMobile}
+          selectedAreas={selectedAreas}
+          leadSubmitted={leadSubmitted}
+          onLeadSubmitted={setLeadSubmitted}
+        />
       </div>
     );
   }

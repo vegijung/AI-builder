@@ -3,6 +3,8 @@ import * as XLSX from 'xlsx';
 import { theme } from '../../styles/theme';
 import { syncFromExcel } from '../../services/dataService';
 
+const MAX_ROWS = 500;
+
 function parseExcel(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -38,6 +40,7 @@ function findColumn(row, candidates) {
 
 function transformBuildingBlocks(bbRaw) {
   if (bbRaw.length === 0) return { blocks: [], errors: ['Building Blocks sheet is empty.'] };
+  if (bbRaw.length > MAX_ROWS) return { blocks: [], errors: [`Building Blocks sheet has ${bbRaw.length} rows (max ${MAX_ROWS}).`] };
   const errors = [];
   const sample = bbRaw[0];
   const nameCol = findColumn(sample, ['name']);
@@ -56,7 +59,9 @@ function transformBuildingBlocks(bbRaw) {
     const maturity = parseInt(row[scoreCol], 10);
 
     if (!name) return;
+    if (name.length > 200) { errors.push(`Row ${i + 2}: Building block name exceeds 200 characters.`); return; }
     if (!category) { errors.push(`Row ${i + 2}: Building block "${name}" has no category.`); return; }
+    if (category.length > 200) { errors.push(`Row ${i + 2}: Category name exceeds 200 characters.`); return; }
     if (isNaN(maturity) || maturity < 1 || maturity > 5) {
       errors.push(`Row ${i + 2}: Building block "${name}" has invalid score "${row[scoreCol]}" (must be 1-5).`);
       return;
@@ -69,6 +74,7 @@ function transformBuildingBlocks(bbRaw) {
 
 function transformUseCases(ucRaw) {
   if (ucRaw.length === 0) return { useCases: [], errors: ['Use Cases sheet is empty.'] };
+  if (ucRaw.length > MAX_ROWS) return { useCases: [], errors: [`Use Cases sheet has ${ucRaw.length} rows (max ${MAX_ROWS}).`] };
   const errors = [];
   const sample = ucRaw[0];
   const nameCol = findColumn(sample, ['use case', 'usecase', 'name']);
@@ -91,11 +97,13 @@ function transformUseCases(ucRaw) {
     const valueChainArea = String(row[actCol] || '').trim();
 
     if (!name) return;
+    if (name.length > 200) { errors.push(`Row ${i + 2}: Use case name exceeds 200 characters.`); return; }
     if (!activityType || !['Primary', 'Support'].includes(activityType)) {
       errors.push(`Row ${i + 2}: Use case "${name}" has invalid type "${activityType}" (must be Primary or Support).`);
       return;
     }
     if (!valueChainArea) { errors.push(`Row ${i + 2}: Use case "${name}" has no activity.`); return; }
+    if (valueChainArea.length > 200) { errors.push(`Row ${i + 2}: Activity name exceeds 200 characters.`); return; }
 
     const buildingBlocks = blockCols
       .map(col => String(row[col] || '').trim())
