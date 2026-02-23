@@ -11,6 +11,7 @@ import { theme } from '../../styles/theme';
 export function UseCaseCard({ useCase, index = 0, expandable = true, highlightedBlock, highlightedCategories, onCompareToggle, isCompareSelected, showCompare, onAddToRoadmap, isInRoadmap }) {
   const [expanded, setExpanded] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [showBlocks, setShowBlocks] = useState(false);
   const [aiExplanation, setAiExplanation] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
   const { categories, buildingBlockMap, valueChainShortLabels } = useData();
@@ -114,12 +115,27 @@ export function UseCaseCard({ useCase, index = 0, expandable = true, highlighted
           borderTop: '1px solid ' + theme.colors.borderLight,
           animation: 'fadeIn 0.25s ease-out',
         }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-            {useCase.buildingBlocks.map(b => {
-              const hl = !highlightedCategories?.length || highlightedCategories.includes(getBlockCategory(b, buildingBlockMap));
-              return <BuildingBlockTag key={b} name={b} showScore isHighlighted={hl} />;
-            })}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowBlocks(!showBlocks); }}
+              style={{
+                background: 'none', border: 'none', padding: '2px 0',
+                color: theme.colors.textMuted, fontSize: theme.typography.sizes.base,
+                cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline',
+                textUnderlineOffset: '3px', display: 'flex', alignItems: 'center', gap: 4,
+              }}
+            >
+              {showBlocks ? 'Hide' : 'Show'} building blocks ({useCase.buildingBlocks.length})
+            </button>
           </div>
+          {showBlocks && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8, animation: 'fadeIn 0.2s ease-out' }}>
+              {useCase.buildingBlocks.map(b => {
+                const hl = !highlightedCategories?.length || highlightedCategories.includes(getBlockCategory(b, buildingBlockMap));
+                return <BuildingBlockTag key={b} name={b} showScore isHighlighted={hl} />;
+              })}
+            </div>
+          )}
           <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', gap: 12 }}>
               {Object.entries(catBreakdown).sort((a, b) => b[1] - a[1]).map(([cat, count]) => (
