@@ -4,39 +4,93 @@ import { ROADMAP_PHASES, MATURITY_COLORS } from '../data/constants';
 const MMG_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Inter', -apple-system, sans-serif; background: #F8F7F5; color: #2A2520; line-height: 1.5; }
-  .header { background: #1E293B; color: #fff; padding: 32px 40px; }
-  .header h1 { font-size: 28px; font-weight: 900; margin-bottom: 4px; }
-  .header .subtitle { font-size: 14px; color: #94A3B8; }
-  .header .accent { height: 4px; background: linear-gradient(90deg, #38BDF8, #EC4899, #FBB740); margin-top: 16px; border-radius: 2px; }
-  .container { max-width: 900px; margin: 0 auto; padding: 32px 40px; }
-  .section { margin-bottom: 32px; }
-  .section-title { font-size: 18px; font-weight: 900; color: #1E293B; border-bottom: 2px solid #E2E0DC; padding-bottom: 6px; margin-bottom: 16px; }
-  .card { background: #fff; border: 1px solid #E2E0DC; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(42,37,32,0.06); }
-  .phase-col { flex: 1; border-top: 3px solid; border-radius: 10px; padding: 14px; background: #FAFAF8; }
-  .phase-item { padding: 6px 0; border-bottom: 1px solid #F0EFEB; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: #fff; color: #2A2520; line-height: 1.5; }
+  .header { background: #1E293B; color: #fff; padding: 28px 36px; }
+  .header h1 { font-size: 26px; font-weight: 900; margin-bottom: 4px; }
+  .header .subtitle { font-size: 13px; color: #94A3B8; }
+  .header .accent { height: 4px; background: linear-gradient(90deg, #38BDF8, #EC4899, #FBB740); margin-top: 14px; border-radius: 2px; }
+  .container { max-width: 860px; margin: 0 auto; padding: 24px 32px; }
+  .section { margin-bottom: 24px; }
+  .section-title { font-size: 16px; font-weight: 900; color: #1E293B; border-bottom: 2px solid #E2E0DC; padding-bottom: 5px; margin-bottom: 14px; }
+  .card { background: #fff; border: 1px solid #E2E0DC; border-radius: 8px; padding: 16px 18px; margin-bottom: 10px; }
+  .phase-col { flex: 1; border-top: 3px solid; border-radius: 8px; padding: 14px; background: #FAFAF8; }
+  .phase-item { padding: 6px 0; border-bottom: 1px solid #F0EFEB; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
   .dots { display: inline-flex; gap: 3px; }
   .dot { width: 6px; height: 6px; border-radius: 50%; }
-  .footer { text-align: center; padding: 24px 40px; color: #8E8E93; font-size: 12px; border-top: 1px solid #E2E0DC; margin-top: 32px; }
+  .footer { text-align: center; padding: 20px 32px; color: #8E8E93; font-size: 11px; border-top: 1px solid #E2E0DC; margin-top: 24px; }
+  .page-spacer { display: none; }
 
-  @page { margin: 12mm 10mm; }
+  @page { margin: 10mm 8mm; }
 
   @media print {
-    * { overflow: visible !important; float: none !important; }
-    body { background: #fff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
-    .header { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; page-break-after: avoid; }
-    .card { border-radius: 6px !important; box-shadow: none !important; page-break-inside: avoid; break-inside: avoid; }
-    .rec-card { page-break-inside: avoid; break-inside: avoid; margin-bottom: 6px !important; }
-    .recs-section { page-break-inside: auto; break-inside: auto; }
-    .section-title { page-break-after: avoid; break-after: avoid; }
-    .footer { page-break-inside: avoid; break-inside: avoid; }
-    .next-steps-card { page-break-inside: avoid; break-inside: avoid; }
-    .next-steps-strip { display: block !important; }
-    .next-steps-strip > div { display: block !important; margin-bottom: 10px; min-width: 0 !important; }
-    .container { padding: 20px 24px !important; }
-    .accent { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+    .card { box-shadow: none !important; }
+    .page-spacer { display: block; height: 0; page-break-before: always; break-before: page; }
   }
 `;
+
+const PAGE_BREAK_SCRIPT = `
+<script>
+(function() {
+  var PAGE_H = 980;
+  var MARGIN = 20;
+
+  function fixBreaks() {
+    var blocks = document.querySelectorAll('.blk');
+    if (!blocks.length) return;
+
+    // Remove any previously inserted spacers
+    document.querySelectorAll('.page-spacer').forEach(function(s) { s.remove(); });
+
+    var pageBottom = PAGE_H;
+    for (var i = 0; i < blocks.length; i++) {
+      var el = blocks[i];
+      var rect = el.getBoundingClientRect();
+      var top = rect.top + window.scrollY;
+      var bottom = top + rect.height;
+
+      if (bottom <= pageBottom) continue;
+
+      if (top >= pageBottom - MARGIN) {
+        // Element starts at or past the page boundary -- push to next page
+        var spacer = document.createElement('div');
+        spacer.className = 'page-spacer';
+        el.parentNode.insertBefore(spacer, el);
+        pageBottom = top + PAGE_H;
+        // re-measure after spacer inserted
+        rect = el.getBoundingClientRect();
+        top = rect.top + window.scrollY;
+        bottom = top + rect.height;
+        pageBottom = top + PAGE_H;
+      } else if (top < pageBottom && bottom > pageBottom) {
+        // Element straddles the page boundary -- push to next page
+        var spacer2 = document.createElement('div');
+        spacer2.className = 'page-spacer';
+        el.parentNode.insertBefore(spacer2, el);
+        // re-measure
+        rect = el.getBoundingClientRect();
+        top = rect.top + window.scrollY;
+        bottom = top + rect.height;
+        pageBottom = top + PAGE_H;
+      }
+
+      // If the element is taller than a page, advance pageBottom past it
+      while (bottom > pageBottom) {
+        pageBottom += PAGE_H;
+      }
+    }
+  }
+
+  // Run after layout settles
+  setTimeout(fixBreaks, 100);
+
+  // Re-run before print in case browser reflowed
+  window.addEventListener('beforeprint', function() {
+    setTimeout(fixBreaks, 0);
+  });
+})();
+<\/script>`;
+
 
 function maturityDots(score) {
   return Array.from({ length: 5 }, (_, i) => {
@@ -115,9 +169,9 @@ export function generateAssessmentHtml({ companyProfile, executiveSummary, recom
   const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   const profileHtml = companyProfile && (companyProfile.industry || companyProfile.companySize || companyProfile.role)
-    ? `<div class="card" style="margin-bottom:20px;">
-        <div style="font-weight:700;font-size:14px;margin-bottom:8px;">Company Profile</div>
-        <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:#5C5A56;">
+    ? `<div class="card blk" style="margin-bottom:16px;">
+        <div style="font-weight:700;font-size:13px;margin-bottom:6px;">Company Profile</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:#5C5A56;">
           ${companyProfile.industry ? `<span>Industry: <strong>${companyProfile.industry}</strong></span>` : ''}
           ${companyProfile.companySize ? `<span>Size: <strong>${companyProfile.companySize} employees</strong></span>` : ''}
           ${companyProfile.role ? `<span>Role: <strong>${companyProfile.role}</strong></span>` : ''}
@@ -126,9 +180,9 @@ export function generateAssessmentHtml({ companyProfile, executiveSummary, recom
     : '';
 
   const summaryHtml = executiveSummary
-    ? `<div class="card" style="margin-bottom:20px;background:#1E293B;color:#ccc8c4;page-break-inside:avoid;">
-        <div style="font-weight:900;font-size:15px;color:#FBB740;margin-bottom:10px;">Executive Summary</div>
-        <div style="font-size:13px;line-height:1.7;white-space:pre-line;">${executiveSummary}</div>
+    ? `<div class="card blk" style="margin-bottom:16px;background:#1E293B;color:#ccc8c4;">
+        <div style="font-weight:900;font-size:14px;color:#FBB740;margin-bottom:8px;">Executive Summary</div>
+        <div style="font-size:12px;line-height:1.7;white-space:pre-line;">${executiveSummary}</div>
       </div>`
     : '';
 
@@ -139,18 +193,18 @@ export function generateAssessmentHtml({ companyProfile, executiveSummary, recom
     const fitLabel = rec.score >= 4 ? 'Strong Fit' : rec.score >= 3 ? 'Good Fit' : rec.score >= 2 ? 'Moderate Fit' : 'Weak Fit';
     const fitColor = FIT_COLORS[fitLabel] || '#8E8E93';
     const areaLabel = (valueChainShortLabels || {})[uc.valueChainArea] || uc.valueChainArea || '';
-    return `<div class="card rec-card" style="margin-bottom:10px;border-left:3px solid ${fitColor};">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="display:inline-flex;width:20px;height:20px;border-radius:50%;background:${fitColor}20;color:${fitColor};font-size:11px;font-weight:900;align-items:center;justify-content:center;">${i + 1}</span>
-          <strong style="font-size:14px;">${uc.name || ''}</strong>
-          <span style="font-size:11px;color:#8E8E93;">${areaLabel}</span>
+    return `<div class="card blk" style="border-left:3px solid ${fitColor};">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="display:inline-flex;width:18px;height:18px;border-radius:50%;background:${fitColor}20;color:${fitColor};font-size:10px;font-weight:900;align-items:center;justify-content:center;">${i + 1}</span>
+          <strong style="font-size:13px;">${uc.name || ''}</strong>
+          <span style="font-size:10px;color:#8E8E93;">${areaLabel}</span>
         </div>
-        <span style="font-size:11px;font-weight:700;color:${fitColor};">${fitLabel}</span>
+        <span style="font-size:10px;font-weight:700;color:${fitColor};">${fitLabel}</span>
       </div>
-      ${rec.whyText ? `<div style="font-size:12px;color:#5C5A56;line-height:1.5;margin-top:4px;">${rec.whyText}</div>` : ''}
-      <div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:8px;">
-        ${(uc.buildingBlocks || []).map(b => `<span style="font-size:10px;padding:1px 5px;border-radius:4px;background:#5B8AC415;color:#5B8AC4;font-weight:500;">${b}</span>`).join('')}
+      ${rec.whyText ? `<div style="font-size:11px;color:#5C5A56;line-height:1.5;margin-top:3px;">${rec.whyText}</div>` : ''}
+      <div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:6px;">
+        ${(uc.buildingBlocks || []).map(b => `<span style="font-size:9px;padding:1px 5px;border-radius:4px;background:#5B8AC415;color:#5B8AC4;font-weight:500;">${b}</span>`).join('')}
       </div>
     </div>`;
   }).join('');
@@ -159,8 +213,8 @@ export function generateAssessmentHtml({ companyProfile, executiveSummary, recom
   const DIM_COLORS = { data: '#5B8AC4', talent: '#3aaa88', process: '#FBB740', culture: '#EC4899' };
 
   const readinessHtml = dimensionScores
-    ? `<div class="card" style="margin-bottom:20px;">
-        <div style="font-weight:700;font-size:14px;margin-bottom:10px;">Readiness Overview (${(readinessScore || 0).toFixed(1)}/5)</div>
+    ? `<div class="card blk" style="margin-bottom:16px;">
+        <div style="font-weight:700;font-size:13px;margin-bottom:8px;">Readiness Overview (${(readinessScore || 0).toFixed(1)}/5)</div>
         ${Object.entries(dimensionScores).map(([key, val]) => {
           const color = DIM_COLORS[key] || '#8E8E93';
           return `<div style="margin-bottom:8px;">
@@ -178,8 +232,8 @@ export function generateAssessmentHtml({ companyProfile, executiveSummary, recom
 
   const areaCount = Object.keys(areaRatings || {}).length;
 
-  const nextStepsHtml = `<div class="card next-steps-card" style="margin-top:24px;background:#1E293B;color:#ccc8c4;">
-    <div style="font-weight:900;font-size:15px;color:#FBB740;margin-bottom:14px;">What Happens Next</div>
+  const nextStepsHtml = `<div class="card blk" style="margin-top:16px;background:#1E293B;color:#ccc8c4;">
+    <div style="font-weight:900;font-size:14px;color:#FBB740;margin-bottom:12px;">What Happens Next</div>
     <div class="next-steps-strip" style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;">
       <div style="flex:1;min-width:160px;">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
@@ -255,14 +309,12 @@ export function generateAssessmentHtml({ companyProfile, executiveSummary, recom
     ${profileHtml}
     ${summaryHtml}
     ${readinessHtml}
-    <div class="section recs-section">
-      <div class="section-title">Recommended AI Use Cases</div>
-      ${recsHtml}
-    </div>
+    <div class="section-title blk">Recommended AI Use Cases</div>
+    ${recsHtml}
     ${nextStepsHtml}
   </div>
-  <div class="footer">
-    <div style="margin-bottom:6px;">
+  <div class="footer blk">
+    <div style="margin-bottom:4px;">
       <strong>MMG Management Consulting</strong> &mdash; From strategy to production, end-to-end AI transformation.
     </div>
     <div>
@@ -270,6 +322,7 @@ export function generateAssessmentHtml({ companyProfile, executiveSummary, recom
       <a href="https://www.mmgmc.ch" style="color:#5B8AC4;">www.mmgmc.ch</a>
     </div>
   </div>
+  ${PAGE_BREAK_SCRIPT}
 </body>
 </html>`;
 }
@@ -279,8 +332,8 @@ export function openHtmlReport(html) {
   if (!w) return;
   w.document.write(html);
   w.document.close();
-  // Delay print so the browser fully lays out the page and loads the font
+  // Wait for layout + the embedded page-break script (100ms) + font load
   setTimeout(() => {
     try { w.print(); } catch { /* popup blocked or closed */ }
-  }, 600);
+  }, 800);
 }
