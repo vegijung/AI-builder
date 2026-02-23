@@ -1,3 +1,16 @@
+const toastListeners = new Set();
+
+export function onAiToast(fn) {
+  toastListeners.add(fn);
+  return () => toastListeners.delete(fn);
+}
+
+function emitToast(message, type = 'error') {
+  toastListeners.forEach(fn => fn({ message, type }));
+}
+
+const explainCache = new Map();
+
 async function post(endpoint, body) {
   try {
     const res = await fetch(endpoint, {
@@ -5,9 +18,17 @@ async function post(endpoint, body) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      if (res.status === 404) {
+        emitToast('AI features unavailable — API endpoint not found', 'warning');
+      } else {
+        emitToast('AI request failed — showing default results', 'error');
+      }
+      return null;
+    }
     return await res.json();
   } catch {
+    emitToast('Network error — AI features unavailable', 'error');
     return null;
   }
 }
@@ -44,6 +65,9 @@ export async function fetchAISearch(query, useCases) {
 }
 
 export async function fetchAIExplain(useCase, companyProfile, userAreaRating) {
+  const cacheKey = useCase.name + '|' + (companyProfile?.industry || '') + '|' + (userAreaRating || '');
+  if (explainCache.has(cacheKey)) return explainCache.get(cacheKey);
+
   const data = await post('/api/ai-explain', {
     useCase: {
       name: useCase.name,
@@ -55,5 +79,20 @@ export async function fetchAIExplain(useCase, companyProfile, userAreaRating) {
     companyProfile: companyProfile || null,
     userAreaRating: userAreaRating || null,
   });
-  return data?.explanation || null;
+  const explanation = data?.explanation || null;
+  if (explanation) explainCache.set(cacheKey, explanation);
+  return explanation;
+}
+
+export async function fetchAICompare(useCases) {
+  const data = await post('/api/ai-compare', {
+    useCases: (useCases || []).map(uc => ({
+      name: uc.name,
+      valueChainArea: uc.valueChainArea,
+      activityType: uc.activityType,
+      buildingBlocks: uc.buildingBlocks,
+      avgMaturity: uc.avgMaturity,
+    })),
+  });
+  return data?.comparison || null;
 }

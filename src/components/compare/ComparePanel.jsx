@@ -1,12 +1,51 @@
-import { useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { getUseCaseAvgMaturity, getMaturityLevel, getBlockColor, getBlockCategory } from '../../utils/maturity';
+import { fetchAIExplain, fetchAICompare } from '../../services/aiService';
 import { useData } from '../../contexts/DataContext';
+import { AiBadge, AiSkeleton, AiExplainButton, AiExplainBox } from '../shared/AiBadge';
 import { MaturityBadge } from '../shared/MaturityBadge';
 import { MaturityDots } from '../shared/MaturityDots';
 import { theme } from '../../styles/theme';
 
+function UseCaseExplain({ useCase, avg }) {
+  const [explanation, setExplanation] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  if (loading) return <div style={{ marginTop: 10 }}><AiSkeleton lines={2} /></div>;
+  if (explanation) return <div style={{ marginTop: 10 }}><AiExplainBox explanation={explanation} /></div>;
+
+  return (
+    <div style={{ marginTop: 10 }}>
+      <AiExplainButton
+        loading={false}
+        onClick={async (e) => {
+          e.stopPropagation();
+          setLoading(true);
+          const result = await fetchAIExplain({ ...useCase, avgMaturity: avg }, null, null);
+          setExplanation(result);
+          setLoading(false);
+        }}
+      />
+    </div>
+  );
+}
+
 export function ComparePanel({ useCases, onClose }) {
   const { categories, valueChainShortLabels, buildingBlockMap } = useData();
+  const [aiComparison, setAiComparison] = useState(null);
+  const [aiCompareLoading, setAiCompareLoading] = useState(false);
+
+  const handleCompare = useCallback(async () => {
+    if (aiCompareLoading) return;
+    setAiCompareLoading(true);
+    const ucPayload = useCases.map(uc => ({
+      ...uc,
+      avgMaturity: getUseCaseAvgMaturity(uc, buildingBlockMap),
+    }));
+    const result = await fetchAICompare(ucPayload);
+    setAiComparison(result);
+    setAiCompareLoading(false);
+  }, [useCases, buildingBlockMap, aiCompareLoading]);
 
   const analysis = useMemo(() => {
     const allBlocks = new Set();
@@ -114,6 +153,8 @@ export function ComparePanel({ useCases, onClose }) {
                     </span>
                   ))}
                 </div>
+
+                <UseCaseExplain useCase={uc} avg={avg} />
               </div>
             );
           })}
@@ -146,6 +187,40 @@ export function ComparePanel({ useCases, onClose }) {
               <span style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textSecondary }}>{analysis.shared.join(', ')}</span>
             </div>
           )}
+
+          {/* AI Comparison Summary */}
+          <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid ' + theme.colors.borderLight }}>
+            {aiCompareLoading ? (
+              <AiSkeleton lines={3} />
+            ) : aiComparison ? (
+              <div style={{
+                background: theme.colors.primary + '08', borderRadius: theme.radii.lg, padding: 14,
+                border: '1px solid ' + theme.colors.primary + '20',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <span style={{ fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.bold, color: theme.colors.primary }}>
+                    AI Comparison
+                  </span>
+                  <AiBadge />
+                </div>
+                <p style={{ margin: 0, fontSize: theme.typography.sizes.lg, color: theme.colors.textSecondary, lineHeight: 1.6 }}>
+                  {aiComparison}
+                </p>
+              </div>
+            ) : (
+              <button onClick={handleCompare} style={{
+                padding: '8px 16px', borderRadius: theme.radii.lg,
+                border: '1px solid ' + theme.colors.primary + '40',
+                background: theme.colors.primary + '08', color: theme.colors.primary,
+                fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.semibold,
+                cursor: 'pointer', fontFamily: 'inherit',
+                transition: `all ${theme.transitions.fast}`,
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}>
+                Compare with AI <span style={{ fontSize: 13 }}>&#10024;</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -11,6 +11,7 @@ import { ComparePanel } from './components/compare/ComparePanel';
 import { CompareFloatingButton } from './components/compare/CompareFloatingButton';
 import { AdminOverlay } from './components/admin/AdminOverlay';
 import { OnboardingTour } from './components/onboarding/OnboardingTour';
+import { Toast } from './components/shared/Toast';
 import { useSearch } from './hooks/useSearch';
 import { useCompare } from './hooks/useCompare';
 import { useAssessment } from './hooks/useAssessment';
@@ -133,6 +134,8 @@ function AppContent() {
         onClose={() => setShowOnboarding(false)}
         onNavigate={setActiveTab}
       />
+
+      <Toast />
     </div>
   );
 }

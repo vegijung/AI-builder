@@ -13,6 +13,7 @@ import { ReadinessRadar } from './ReadinessRadar';
 import { LeadCaptureCard } from './LeadCaptureCard';
 import { STRATEGIC_PRIORITIES, READINESS_DIMENSIONS } from '../../data/constants';
 import { fetchAISummary, fetchAIExplain } from '../../services/aiService';
+import { AiBadge, AiSkeleton, AiExplainButton, AiExplainBox } from '../shared/AiBadge';
 import { theme } from '../../styles/theme';
 
 const priorityMap = Object.fromEntries(STRATEGIC_PRIORITIES.map(p => [p.id, p.label]));
@@ -90,13 +91,7 @@ function ExecutiveSummary({ items, aiSummary, aiLoading, onRegenerate }) {
         </h3>
         {(showAI || aiLoading) && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{
-              fontSize: theme.typography.sizes.sm, color: theme.colors.primary + 'aa',
-              background: theme.colors.primary + '15', padding: '2px 8px',
-              borderRadius: theme.radii.md, fontWeight: theme.typography.weights.semibold,
-            }}>
-              {aiLoading ? 'Generating...' : 'AI-generated'}
-            </span>
+            <AiBadge label={aiLoading ? 'Generating...' : 'AI-generated'} variant="block" dark />
             {showAI && onRegenerate && (
               <button onClick={onRegenerate} style={{
                 border: 'none', background: 'none', color: theme.colors.primary + '88',
@@ -137,8 +132,8 @@ function ExecutiveSummary({ items, aiSummary, aiLoading, onRegenerate }) {
             </div>
           ))}
           {aiLoading && (
-            <div style={{ fontSize: theme.typography.sizes.base, color: theme.colors.primary + '66', fontStyle: 'italic', marginTop: 4 }}>
-              AI is preparing a personalized summary...
+            <div style={{ marginTop: 8 }}>
+              <AiSkeleton lines={3} dark />
             </div>
           )}
         </div>
@@ -350,50 +345,28 @@ function RecommendationCard({ rec, index, readinessScore, areaRatings, prioritie
           )}
 
           {/* AI Explain */}
-          {aiExplanation ? (
-            <div style={{
-              background: theme.colors.primary + '08', borderRadius: theme.radii.lg, padding: 12, marginTop: 10,
-              border: '1px solid ' + theme.colors.primary + '20',
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <div style={{ fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.bold, color: theme.colors.primary }}>
-                  AI Explanation
-                </div>
-                <span style={{ fontSize: theme.typography.sizes.xs, color: theme.colors.primary + '88', background: theme.colors.primary + '12', padding: '1px 6px', borderRadius: theme.radii.md }}>AI-generated</span>
-              </div>
-              <p style={{ margin: 0, fontSize: theme.typography.sizes.lg, color: theme.colors.textSecondary, lineHeight: 1.6 }}>
-                {aiExplanation}
-              </p>
-            </div>
-          ) : (
-            <button
-              onClick={async (e) => {
-                e.stopPropagation();
-                if (aiLoading) return;
-                setAiLoading(true);
-                const result = await fetchAIExplain(
-                  { ...uc, avgMaturity: rec.maturity },
-                  companyProfile,
-                  areaRatings[uc.valueChainArea],
-                );
-                setAiExplanation(result);
-                setAiLoading(false);
-              }}
-              disabled={aiLoading}
-              style={{
-                marginTop: 10, padding: '7px 14px', borderRadius: theme.radii.lg,
-                border: '1px solid ' + theme.colors.primary + '40',
-                background: theme.colors.primary + '08', color: theme.colors.primary,
-                fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.semibold,
-                cursor: aiLoading ? 'wait' : 'pointer', fontFamily: 'inherit',
-                transition: `all ${theme.transitions.fast}`,
-                display: 'flex', alignItems: 'center', gap: 6,
-              }}
-            >
-              {aiLoading ? 'Generating...' : 'Explain this use case'}
-              {!aiLoading && <span style={{ fontSize: 14 }}>&#10024;</span>}
-            </button>
-          )}
+          <div style={{ marginTop: 10 }}>
+            {aiLoading ? (
+              <AiSkeleton lines={2} />
+            ) : aiExplanation ? (
+              <AiExplainBox explanation={aiExplanation} />
+            ) : (
+              <AiExplainButton
+                loading={false}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  setAiLoading(true);
+                  const result = await fetchAIExplain(
+                    { ...uc, avgMaturity: rec.maturity },
+                    companyProfile,
+                    areaRatings[uc.valueChainArea],
+                  );
+                  setAiExplanation(result);
+                  setAiLoading(false);
+                }}
+              />
+            )}
+          </div>
         </div>
       )}
     </div>

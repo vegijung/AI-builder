@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { getUseCaseAvgMaturity, getBlockCategory } from '../../utils/maturity';
 import { fetchAISearch } from '../../services/aiService';
+import { AiBadge, AiSkeleton } from '../shared/AiBadge';
 import { SectionLabel } from '../shared/SectionLabel';
 import { MaturityBadge } from '../shared/MaturityBadge';
 import { UseCaseCard } from '../shared/UseCaseCard';
@@ -216,9 +217,12 @@ export function ExploreTab({ searchNavigation, compareState, roadmapState, asses
             </div>
 
             {smartLoading && (
-              <div style={{ padding: 48, textAlign: 'center', color: theme.colors.textMuted, fontSize: theme.typography.sizes.lg }}>
-                <div style={{ fontSize: 24, marginBottom: 8, animation: 'pulse 1.5s ease-in-out infinite' }}>&#10024;</div>
-                AI is analyzing your request and matching use cases...
+              <div style={{ padding: '32px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                  <span style={{ fontSize: 18, animation: 'pulse 1.5s ease-in-out infinite' }}>&#10024;</span>
+                  <span style={{ color: theme.colors.textMuted, fontSize: theme.typography.sizes.lg }}>AI is analyzing your request...</span>
+                </div>
+                <AiSkeleton lines={4} />
               </div>
             )}
 
@@ -232,7 +236,7 @@ export function ExploreTab({ searchNavigation, compareState, roadmapState, asses
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textMuted, marginBottom: 4 }}>
                   {smartMatchedUseCases.length} matches found
-                  <span style={{ fontSize: theme.typography.sizes.xs, color: theme.colors.primary + '88', background: theme.colors.primary + '12', padding: '1px 6px', borderRadius: theme.radii.md, marginLeft: 8 }}>AI-powered</span>
+                  <span style={{ marginLeft: 8 }}><AiBadge label="AI-powered" /></span>
                 </div>
                 {smartMatchedUseCases.map(({ useCase: uc, explanation }, i) => (
                   <div key={uc.name} style={{
