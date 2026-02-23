@@ -89,7 +89,7 @@ function AppContent() {
 
       <main style={{ animation: 'fadeIn 0.25s ease-out' }} key={activeTab}>
         {activeTab === 'assessment' && (
-          <AssessmentTab assessment={assessment} onAddToRoadmap={roadmap.addToRoadmap} />
+          <AssessmentTab assessment={assessment} onAddToRoadmap={roadmap.addToRoadmap} isInRoadmap={roadmap.isInRoadmap} />
         )}
         {activeTab === 'explore' && (
           <ExploreTab

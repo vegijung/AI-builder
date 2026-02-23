@@ -98,7 +98,7 @@ const fieldLabel = {
   color: theme.colors.textSecondary, marginBottom: 4,
 };
 
-export function AssessmentTab({ assessment, onAddToRoadmap }) {
+export function AssessmentTab({ assessment, onAddToRoadmap, isInRoadmap }) {
   const { useCases, valueChainAreaNames, valueChainShortLabels } = useData();
   const { isMobile } = useBreakpoint();
   const {
@@ -135,6 +135,7 @@ export function AssessmentTab({ assessment, onAddToRoadmap }) {
           areaRatings={areaRatings}
           readinessRatings={readinessRatings}
           onAddToRoadmap={onAddToRoadmap}
+          isInRoadmap={isInRoadmap}
           isMobile={isMobile}
           selectedAreas={selectedAreas}
           priorities={priorities}

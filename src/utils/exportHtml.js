@@ -94,6 +94,101 @@ export function generateRoadmapHtml(shortlist, buildingBlockMap, categories, val
 </html>`;
 }
 
+export function generateAssessmentHtml({ companyProfile, executiveSummary, recommendations, dimensionScores, readinessScore, areaRatings, valueChainShortLabels }) {
+  const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const profileHtml = companyProfile && (companyProfile.industry || companyProfile.companySize || companyProfile.role)
+    ? `<div class="card" style="margin-bottom:20px;">
+        <div style="font-weight:700;font-size:14px;margin-bottom:8px;">Company Profile</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:#5C5A56;">
+          ${companyProfile.industry ? `<span>Industry: <strong>${companyProfile.industry}</strong></span>` : ''}
+          ${companyProfile.companySize ? `<span>Size: <strong>${companyProfile.companySize} employees</strong></span>` : ''}
+          ${companyProfile.role ? `<span>Role: <strong>${companyProfile.role}</strong></span>` : ''}
+        </div>
+      </div>`
+    : '';
+
+  const summaryHtml = executiveSummary
+    ? `<div class="card" style="margin-bottom:20px;background:#1E293B;color:#ccc8c4;">
+        <div style="font-weight:900;font-size:15px;color:#FBB740;margin-bottom:10px;">Executive Summary</div>
+        <div style="font-size:13px;line-height:1.7;white-space:pre-line;">${executiveSummary}</div>
+      </div>`
+    : '';
+
+  const FIT_COLORS = { 'Strong Fit': '#3aaa88', 'Good Fit': '#5B8AC4', 'Moderate Fit': '#FBB740', 'Weak Fit': '#D94070' };
+
+  const recsHtml = (recommendations || []).map((rec, i) => {
+    const uc = rec.useCase || {};
+    const fitLabel = rec.score >= 4 ? 'Strong Fit' : rec.score >= 3 ? 'Good Fit' : rec.score >= 2 ? 'Moderate Fit' : 'Weak Fit';
+    const fitColor = FIT_COLORS[fitLabel] || '#8E8E93';
+    const areaLabel = (valueChainShortLabels || {})[uc.valueChainArea] || uc.valueChainArea || '';
+    return `<div class="card" style="margin-bottom:10px;border-left:3px solid ${fitColor};">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="display:inline-flex;width:20px;height:20px;border-radius:50%;background:${fitColor}20;color:${fitColor};font-size:11px;font-weight:900;align-items:center;justify-content:center;">${i + 1}</span>
+          <strong style="font-size:14px;">${uc.name || ''}</strong>
+          <span style="font-size:11px;color:#8E8E93;">${areaLabel}</span>
+        </div>
+        <span style="font-size:11px;font-weight:700;color:${fitColor};">${fitLabel}</span>
+      </div>
+      ${rec.whyText ? `<div style="font-size:12px;color:#5C5A56;line-height:1.5;margin-top:4px;">${rec.whyText}</div>` : ''}
+      <div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:8px;">
+        ${(uc.buildingBlocks || []).map(b => `<span style="font-size:10px;padding:1px 5px;border-radius:4px;background:#5B8AC415;color:#5B8AC4;font-weight:500;">${b}</span>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  const DIM_LABELS = { data: 'Data & Infrastructure', talent: 'Talent & Skills', process: 'Process & Governance', culture: 'Culture & Leadership' };
+  const DIM_COLORS = { data: '#5B8AC4', talent: '#3aaa88', process: '#FBB740', culture: '#EC4899' };
+
+  const readinessHtml = dimensionScores
+    ? `<div class="card" style="margin-bottom:20px;">
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px;">Readiness Overview (${(readinessScore || 0).toFixed(1)}/5)</div>
+        ${Object.entries(dimensionScores).map(([key, val]) => {
+          const color = DIM_COLORS[key] || '#8E8E93';
+          return `<div style="margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
+              <span style="font-weight:600;">${DIM_LABELS[key] || key}</span>
+              <span style="font-weight:700;color:${color};">${val.toFixed(1)}/5</span>
+            </div>
+            <div style="height:6px;background:#F0EFEB;border-radius:3px;overflow:hidden;">
+              <div style="height:100%;width:${(val / 5) * 100}%;background:${color};border-radius:3px;"></div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`
+    : '';
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Readiness Assessment Report</title>
+  <style>${MMG_STYLES}</style>
+</head>
+<body>
+  <div class="header">
+    <h1>AI Readiness Assessment Report</h1>
+    <div class="subtitle">${date} &middot; ${(recommendations || []).length} recommendations &middot; MMG Management Consulting</div>
+    <div class="accent"></div>
+  </div>
+  <div class="container">
+    ${profileHtml}
+    ${summaryHtml}
+    ${readinessHtml}
+    <div class="section">
+      <div class="section-title">Recommended AI Use Cases</div>
+      ${recsHtml}
+    </div>
+  </div>
+  <div class="footer">
+    Generated by AI Building Blocks Framework &mdash; MMG Management Consulting &mdash; <a href="https://www.mmgmc.ch" style="color:#5B8AC4;">www.mmgmc.ch</a>
+  </div>
+</body>
+</html>`;
+}
+
 export function openHtmlReport(html) {
   const w = window.open('', '_blank');
   if (w) {

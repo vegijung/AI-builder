@@ -19,7 +19,7 @@ export function ExploreTab({ searchNavigation, compareState, roadmapState, asses
   const [sortBy, setSortBy] = useState('name');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [prefilled, setPrefilled] = useState(false);
-  const [smartSearchMode, setSmartSearchMode] = useState(false);
+  const [smartSearchMode, setSmartSearchMode] = useState(true);
   const [smartQuery, setSmartQuery] = useState('');
   const [smartResults, setSmartResults] = useState(null);
   const [smartLoading, setSmartLoading] = useState(false);
@@ -138,50 +138,24 @@ export function ExploreTab({ searchNavigation, compareState, roadmapState, asses
 
   return (
     <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 16 : 32 }}>
-      {isMobile ? (
-        <div>
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{
-            padding: '10px 18px', borderRadius: theme.radii.lg,
-            border: '1px solid ' + theme.colors.borderMedium, background: theme.colors.surface,
-            color: theme.colors.textTertiary, fontSize: theme.typography.sizes.md,
-            fontWeight: theme.typography.weights.semibold, cursor: 'pointer', fontFamily: 'inherit',
-            marginBottom: 8, width: '100%',
-          }}>
-            {sidebarOpen ? 'Hide Filters' : 'Show Filters'} {hasFilters ? '(active)' : ''}
-          </button>
-          {sidebarOpen && sidebar}
-        </div>
-      ) : sidebar}
+      {!smartSearchMode && (
+        isMobile ? (
+          <div>
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{
+              padding: '10px 18px', borderRadius: theme.radii.lg,
+              border: '1px solid ' + theme.colors.borderMedium, background: theme.colors.surface,
+              color: theme.colors.textTertiary, fontSize: theme.typography.sizes.md,
+              fontWeight: theme.typography.weights.semibold, cursor: 'pointer', fontFamily: 'inherit',
+              marginBottom: 8, width: '100%',
+            }}>
+              {sidebarOpen ? 'Hide Filters' : 'Show Filters'} {hasFilters ? '(active)' : ''}
+            </button>
+            {sidebarOpen && sidebar}
+          </div>
+        ) : sidebar
+      )}
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        {/* Mode toggle: Filters vs Smart Search */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 4, marginBottom: 14,
-          background: theme.colors.surfaceMuted, borderRadius: theme.radii.lg, padding: 3, width: 'fit-content',
-        }}>
-          <button onClick={() => setSmartSearchMode(false)} style={{
-            padding: '6px 14px', borderRadius: theme.radii.md, border: 'none',
-            fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.semibold,
-            background: !smartSearchMode ? theme.colors.surface : 'transparent',
-            color: !smartSearchMode ? theme.colors.textPrimary : theme.colors.textMuted,
-            boxShadow: !smartSearchMode ? theme.shadows.card : 'none',
-            cursor: 'pointer', fontFamily: 'inherit', transition: `all ${theme.transitions.fast}`,
-          }}>
-            Filters
-          </button>
-          <button onClick={() => setSmartSearchMode(true)} style={{
-            padding: '6px 14px', borderRadius: theme.radii.md, border: 'none',
-            fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.semibold,
-            background: smartSearchMode ? theme.colors.surface : 'transparent',
-            color: smartSearchMode ? theme.colors.primary : theme.colors.textMuted,
-            boxShadow: smartSearchMode ? theme.shadows.card : 'none',
-            cursor: 'pointer', fontFamily: 'inherit', transition: `all ${theme.transitions.fast}`,
-            display: 'flex', alignItems: 'center', gap: 4,
-          }}>
-            Smart Search <span style={{ fontSize: 13 }}>&#10024;</span>
-          </button>
-        </div>
-
         {smartSearchMode ? (
           /* Smart Search Mode */
           <div>
@@ -272,10 +246,29 @@ export function ExploreTab({ searchNavigation, compareState, roadmapState, asses
                 <div style={{ fontSize: theme.typography.sizes.base }}>AI will match your goals to the most relevant use cases and explain why each one fits.</div>
               </div>
             )}
+
+            <div style={{ textAlign: 'center', marginTop: 16 }}>
+              <button onClick={() => setSmartSearchMode(false)} style={{
+                background: 'none', border: 'none', color: theme.colors.textMuted,
+                fontSize: theme.typography.sizes.base, cursor: 'pointer', fontFamily: 'inherit',
+                textDecoration: 'underline', padding: '4px 8px',
+              }}>
+                Switch to manual filters
+              </button>
+            </div>
           </div>
         ) : (
-          /* Filter Mode (existing) */
+          /* Filter Mode */
           <>
+            <div style={{ marginBottom: 10 }}>
+              <button onClick={() => setSmartSearchMode(true)} style={{
+                background: 'none', border: 'none', color: theme.colors.primary,
+                fontSize: theme.typography.sizes.base, cursor: 'pointer', fontFamily: 'inherit',
+                padding: '4px 0', display: 'flex', alignItems: 'center', gap: 4,
+              }}>
+                <span style={{ fontSize: 13 }}>&#10024;</span> Switch to Smart Search
+              </button>
+            </div>
             <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               marginBottom: 14, flexWrap: 'wrap', gap: 8,

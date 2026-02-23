@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { theme } from '../../styles/theme';
 import { submitAssessmentLead } from '../../services/dataService';
 import { isSupabaseConfigured } from '../../services/supabase';
-
 import { INDUSTRIES, COMPANY_SIZES } from '../../data/constants';
 
 const BOOKING_URL = import.meta.env.VITE_BOOKING_URL || null;
@@ -26,12 +25,12 @@ async function sendEmailNotification(leadData) {
           lead_company: leadData.company,
           lead_industry: leadData.industry || 'Not specified',
           lead_company_size: leadData.companySize || 'Not specified',
-          lead_score: leadData.overallScore?.toFixed(1) || '—',
+          lead_score: leadData.overallScore?.toFixed(1) || '\u2014',
         },
       }),
     });
   } catch {
-    // Email notification is best-effort; don't block the user flow
+    // best-effort
   }
 }
 
@@ -45,10 +44,14 @@ const inputStyle = {
 
 const labelStyle = {
   display: 'block', fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.semibold,
-  color: theme.colors.textSecondary, marginBottom: 4,
+  color: '#a0a0a0', marginBottom: 4,
 };
 
-export function LeadCaptureCard({ selectedAreas, areaRatings, readinessRatings, overallScore, companyProfile, priorities, leadSubmitted, onLeadSubmitted }) {
+export function LeadCaptureCard({
+  selectedAreas, areaRatings, readinessRatings, overallScore, companyProfile,
+  priorities, leadSubmitted, onLeadSubmitted,
+  recommendationCount, topUseCaseName, lowestDimension, onDownloadReport,
+}) {
   const [form, setForm] = useState({
     name: '', email: '', company: '',
     industry: companyProfile?.industry || '',
@@ -90,6 +93,9 @@ export function LeadCaptureCard({ selectedAreas, areaRatings, readinessRatings, 
     }
   };
 
+  const bookingHref = BOOKING_URL || 'mailto:info@mmgmc.ch?subject=AI%20Assessment%20Follow-up';
+  const recCount = recommendationCount || 0;
+
   if (leadSubmitted) {
     return (
       <div style={{
@@ -100,14 +106,14 @@ export function LeadCaptureCard({ selectedAreas, areaRatings, readinessRatings, 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
           <span style={{ fontSize: 24 }}>&#10003;</span>
           <h3 style={{ margin: 0, fontSize: 18, fontWeight: theme.typography.weights.black, color: theme.colors.primary }}>
-            Thank you for your interest!
+            {recCount > 3 ? `All ${recCount} recommendations are now unlocked.` : 'Thank you for your interest!'}
           </h3>
         </div>
         <p style={{ fontSize: theme.typography.sizes.xxl, color: '#ccc8c4', margin: '0 0 16px 0', lineHeight: 1.5 }}>
           One of our AI consultants will review your assessment and reach out with personalized recommendations.
         </p>
-        {BOOKING_URL ? (
-          <a href={BOOKING_URL} target="_blank" rel="noopener noreferrer" style={{
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <a href={bookingHref} target="_blank" rel="noopener noreferrer" style={{
             display: 'inline-block', padding: '12px 28px', borderRadius: theme.radii.xl,
             background: theme.colors.primary, color: theme.colors.textPrimary,
             fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold,
@@ -116,23 +122,38 @@ export function LeadCaptureCard({ selectedAreas, areaRatings, readinessRatings, 
             onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
             onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
           >
-            Book a Free 30-Min Sparring Session &rarr;
+            Book a Free 30-Min Session &rarr;
           </a>
-        ) : (
-          <a href="mailto:info@mmgmc.ch?subject=AI%20Assessment%20Follow-up" style={{
-            display: 'inline-block', padding: '12px 28px', borderRadius: theme.radii.xl,
-            background: theme.colors.primary, color: theme.colors.textPrimary,
-            fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold,
-            textDecoration: 'none', transition: `opacity ${theme.transitions.fast}`,
-          }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-          >
-            Get in Touch &rarr;
-          </a>
-        )}
+          {onDownloadReport && (
+            <button onClick={onDownloadReport} style={{
+              padding: '12px 24px', borderRadius: theme.radii.xl,
+              border: '1px solid ' + theme.colors.primary + '60', background: 'transparent',
+              color: theme.colors.primary, fontSize: theme.typography.sizes.xxl,
+              fontWeight: theme.typography.weights.semibold, cursor: 'pointer', fontFamily: 'inherit',
+              transition: `all ${theme.transitions.fast}`,
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = theme.colors.primary + '15'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+            >
+              Download Report
+            </button>
+          )}
+        </div>
       </div>
     );
+  }
+
+  const headline = recCount > 3
+    ? `We found ${recCount} AI opportunities for your organization`
+    : 'Want to discuss these results with an AI expert?';
+
+  let subtitle;
+  if (lowestDimension && lowestDimension.score < 3.0 && recCount > 3) {
+    subtitle = `Your ${lowestDimension.label} score (${lowestDimension.score.toFixed(1)}/5) is limiting several of your recommended use cases. Unlock all results to see the full picture.`;
+  } else if (topUseCaseName && recCount > 3) {
+    subtitle = `Unlock all recommendations and get a detailed implementation plan. Your biggest opportunity: ${topUseCaseName}.`;
+  } else {
+    subtitle = 'Leave your details and one of our consultants will reach out with a personalized recommendation based on your assessment.';
   }
 
   return (
@@ -142,26 +163,26 @@ export function LeadCaptureCard({ selectedAreas, areaRatings, readinessRatings, 
       boxShadow: theme.shadows.elevated, animation: 'fadeIn 0.3s ease-out',
     }}>
       <h3 style={{ margin: '0 0 4px 0', fontSize: 18, fontWeight: theme.typography.weights.black, color: theme.colors.primary }}>
-        Want to discuss these results with an AI expert?
+        {headline}
       </h3>
       <p style={{ fontSize: theme.typography.sizes.xxl, color: '#ccc8c4', margin: '0 0 20px 0', lineHeight: 1.5 }}>
-        Leave your details and one of our consultants will reach out with a personalized recommendation based on your assessment.
+        {subtitle}
       </p>
 
       <form onSubmit={handleSubmit}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 12 }}>
           <div>
-            <label style={{ ...labelStyle, color: '#a0a0a0' }}>Name *</label>
+            <label style={labelStyle}>Name *</label>
             <input type="text" value={form.name} onChange={handleChange('name')} placeholder="Your name"
               style={inputStyle} maxLength={200} required />
           </div>
           <div>
-            <label style={{ ...labelStyle, color: '#a0a0a0' }}>Email *</label>
+            <label style={labelStyle}>Email *</label>
             <input type="email" value={form.email} onChange={handleChange('email')} placeholder="you@company.com"
               style={inputStyle} maxLength={200} required />
           </div>
           <div>
-            <label style={{ ...labelStyle, color: '#a0a0a0' }}>Company *</label>
+            <label style={labelStyle}>Company *</label>
             <input type="text" value={form.company} onChange={handleChange('company')} placeholder="Company name"
               style={inputStyle} maxLength={200} required />
           </div>
@@ -169,7 +190,7 @@ export function LeadCaptureCard({ selectedAreas, areaRatings, readinessRatings, 
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 16 }}>
           <div>
-            <label style={{ ...labelStyle, color: '#a0a0a0' }}>Industry</label>
+            <label style={labelStyle}>Industry</label>
             <select value={form.industry} onChange={handleChange('industry')}
               style={{ ...inputStyle, cursor: 'pointer', appearance: 'auto' }}>
               <option value="">Select industry...</option>
@@ -177,7 +198,7 @@ export function LeadCaptureCard({ selectedAreas, areaRatings, readinessRatings, 
             </select>
           </div>
           <div>
-            <label style={{ ...labelStyle, color: '#a0a0a0' }}>Company Size</label>
+            <label style={labelStyle}>Company Size</label>
             <select value={form.companySize} onChange={handleChange('companySize')}
               style={{ ...inputStyle, cursor: 'pointer', appearance: 'auto' }}>
               <option value="">Select size...</option>
@@ -196,7 +217,7 @@ export function LeadCaptureCard({ selectedAreas, areaRatings, readinessRatings, 
               onMouseEnter={e => { if (canSubmit) e.currentTarget.style.opacity = '0.9'; }}
               onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
             >
-              {submitting ? 'Sending...' : 'Get Expert Feedback'}
+              {submitting ? 'Sending...' : 'Unlock All Results'}
             </button>
           </div>
         </div>

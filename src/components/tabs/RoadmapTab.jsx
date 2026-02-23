@@ -216,6 +216,31 @@ export function RoadmapTab({ roadmap }) {
           />
         ))}
       </div>
+
+      <div style={{
+        marginTop: 24, padding: '14px 20px', borderRadius: theme.radii.xl,
+        background: theme.colors.surfaceAlt, border: '1px solid ' + theme.colors.borderLight,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10,
+      }}>
+        <span style={{ fontSize: theme.typography.sizes.lg, color: theme.colors.textTertiary }}>
+          Need help implementing these? <strong style={{ color: theme.colors.textSecondary }}>MMG can help you go from roadmap to reality.</strong>
+        </span>
+        <a
+          href={import.meta.env.VITE_BOOKING_URL || 'mailto:info@mmgmc.ch?subject=AI%20Roadmap%20Support'}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'inline-block', padding: '8px 18px', borderRadius: theme.radii.lg,
+            background: theme.colors.textPrimary, color: theme.colors.primary,
+            fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.bold,
+            textDecoration: 'none', transition: `opacity ${theme.transitions.fast}`, flexShrink: 0,
+          }}
+          onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
+          onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+        >
+          Book a Strategy Session
+        </a>
+      </div>
     </div>
   );
 }
