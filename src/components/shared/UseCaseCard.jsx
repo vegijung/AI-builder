@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { getUseCaseAvgMaturity, getMaturityLevel, getBlockColor, getBlockMaturity, getBlockCategory } from '../../utils/maturity';
+import { fetchAIExplain } from '../../services/aiService';
 import { useData } from '../../contexts/DataContext';
 import { MaturityDots } from './MaturityDots';
 import { MaturityBadge } from './MaturityBadge';
@@ -9,6 +10,8 @@ import { theme } from '../../styles/theme';
 export function UseCaseCard({ useCase, index = 0, expandable = true, highlightedBlock, highlightedCategories, onCompareToggle, isCompareSelected, showCompare, onAddToRoadmap, isInRoadmap }) {
   const [expanded, setExpanded] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [aiExplanation, setAiExplanation] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const { categories, buildingBlockMap, valueChainShortLabels } = useData();
   const avg = getUseCaseAvgMaturity(useCase, buildingBlockMap);
   const ml = getMaturityLevel(avg);
@@ -142,6 +145,48 @@ export function UseCaseCard({ useCase, index = 0, expandable = true, highlighted
               </button>
             )}
           </div>
+
+          {/* AI Explain */}
+          {aiExplanation ? (
+            <div style={{
+              marginTop: 10, background: theme.colors.primary + '08', borderRadius: theme.radii.lg, padding: 12,
+              border: '1px solid ' + theme.colors.primary + '20',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <div style={{ fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.bold, color: theme.colors.primary }}>
+                  AI Explanation
+                </div>
+                <span style={{ fontSize: theme.typography.sizes.xs, color: theme.colors.primary + '88', background: theme.colors.primary + '12', padding: '1px 6px', borderRadius: theme.radii.md }}>AI-generated</span>
+              </div>
+              <p style={{ margin: 0, fontSize: theme.typography.sizes.lg, color: theme.colors.textSecondary, lineHeight: 1.6 }}>
+                {aiExplanation}
+              </p>
+            </div>
+          ) : (
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (aiLoading) return;
+                setAiLoading(true);
+                const result = await fetchAIExplain({ ...useCase, avgMaturity: avg }, null, null);
+                setAiExplanation(result);
+                setAiLoading(false);
+              }}
+              disabled={aiLoading}
+              style={{
+                marginTop: 10, padding: '6px 12px', borderRadius: theme.radii.lg,
+                border: '1px solid ' + theme.colors.primary + '40',
+                background: theme.colors.primary + '08', color: theme.colors.primary,
+                fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.semibold,
+                cursor: aiLoading ? 'wait' : 'pointer', fontFamily: 'inherit',
+                transition: `all ${theme.transitions.fast}`,
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              {aiLoading ? 'Generating...' : 'Explain this use case'}
+              {!aiLoading && <span style={{ fontSize: 13 }}>&#10024;</span>}
+            </button>
+          )}
         </div>
       )}
     </div>

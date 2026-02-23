@@ -1,6 +1,7 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { getUseCaseAvgMaturity, getBlockCategory } from '../../utils/maturity';
+import { fetchAISearch } from '../../services/aiService';
 import { SectionLabel } from '../shared/SectionLabel';
 import { MaturityBadge } from '../shared/MaturityBadge';
 import { UseCaseCard } from '../shared/UseCaseCard';
@@ -17,6 +18,10 @@ export function ExploreTab({ searchNavigation, compareState, roadmapState, asses
   const [sortBy, setSortBy] = useState('name');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [prefilled, setPrefilled] = useState(false);
+  const [smartSearchMode, setSmartSearchMode] = useState(false);
+  const [smartQuery, setSmartQuery] = useState('');
+  const [smartResults, setSmartResults] = useState(null);
+  const [smartLoading, setSmartLoading] = useState(false);
   const { isMobile } = useBreakpoint();
 
   useEffect(() => {
@@ -90,6 +95,30 @@ export function ExploreTab({ searchNavigation, compareState, roadmapState, asses
     setSelectedCategories(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
   };
 
+  const handleSmartSearch = useCallback(async () => {
+    if (!smartQuery.trim() || smartLoading) return;
+    setSmartLoading(true);
+    const ucPayload = useCases.map(uc => ({
+      ...uc,
+      avgMaturity: getUseCaseAvgMaturity(uc, buildingBlockMap),
+    }));
+    const matches = await fetchAISearch(smartQuery.trim(), ucPayload);
+    setSmartResults(matches);
+    setSmartLoading(false);
+  }, [smartQuery, smartLoading, useCases, buildingBlockMap]);
+
+  const smartMatchedUseCases = useMemo(() => {
+    if (!smartResults) return [];
+    const explanationMap = {};
+    smartResults.forEach(m => { explanationMap[m.name] = m.explanation; });
+    return smartResults
+      .map(m => {
+        const uc = useCases.find(u => u.name === m.name);
+        return uc ? { useCase: uc, explanation: m.explanation } : null;
+      })
+      .filter(Boolean);
+  }, [smartResults, useCases]);
+
   const sidebar = (
     <ExploreSidebar
       selectedAreas={selectedAreas}
@@ -124,53 +153,174 @@ export function ExploreTab({ searchNavigation, compareState, roadmapState, asses
       ) : sidebar}
 
       <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Mode toggle: Filters vs Smart Search */}
         <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginBottom: 14, flexWrap: 'wrap', gap: 8,
+          display: 'flex', alignItems: 'center', gap: 4, marginBottom: 14,
+          background: theme.colors.surfaceMuted, borderRadius: theme.radii.lg, padding: 3, width: 'fit-content',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <SectionLabel>{filteredUseCases.length} Use Cases</SectionLabel>
-            {filteredUseCases.length > 0 && <MaturityBadge avg={overallAvg} />}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ fontSize: theme.typography.sizes.sm, color: theme.colors.textDisabled }}>Sort:</span>
-            {[['name', 'Name'], ['md', 'Maturity \u2193'], ['ma', 'Maturity \u2191']].map(([id, label]) => (
-              <button key={id} onClick={() => setSortBy(id)} style={{
-                padding: '4px 10px', borderRadius: theme.radii.md, border: 'none',
-                fontSize: theme.typography.sizes.sm, fontWeight: theme.typography.weights.semibold,
-                background: sortBy === id ? theme.colors.textPrimary : theme.colors.surfaceMuted,
-                color: sortBy === id ? theme.colors.primary : theme.colors.textMuted,
-                cursor: 'pointer', fontFamily: 'inherit', transition: `all ${theme.transitions.fast}`,
-              }}>
-                {label}
-              </button>
-            ))}
-          </div>
+          <button onClick={() => setSmartSearchMode(false)} style={{
+            padding: '6px 14px', borderRadius: theme.radii.md, border: 'none',
+            fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.semibold,
+            background: !smartSearchMode ? theme.colors.surface : 'transparent',
+            color: !smartSearchMode ? theme.colors.textPrimary : theme.colors.textMuted,
+            boxShadow: !smartSearchMode ? theme.shadows.card : 'none',
+            cursor: 'pointer', fontFamily: 'inherit', transition: `all ${theme.transitions.fast}`,
+          }}>
+            Filters
+          </button>
+          <button onClick={() => setSmartSearchMode(true)} style={{
+            padding: '6px 14px', borderRadius: theme.radii.md, border: 'none',
+            fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.semibold,
+            background: smartSearchMode ? theme.colors.surface : 'transparent',
+            color: smartSearchMode ? theme.colors.primary : theme.colors.textMuted,
+            boxShadow: smartSearchMode ? theme.shadows.card : 'none',
+            cursor: 'pointer', fontFamily: 'inherit', transition: `all ${theme.transitions.fast}`,
+            display: 'flex', alignItems: 'center', gap: 4,
+          }}>
+            Smart Search <span style={{ fontSize: 13 }}>&#10024;</span>
+          </button>
         </div>
 
-        <div style={{
-          display: 'flex', flexDirection: 'column', gap: 6,
-          maxHeight: 'calc(100vh - 260px)', overflowY: 'auto', paddingRight: 4,
-        }}>
-          {filteredUseCases.length === 0 && (
-            <div style={{ padding: 48, textAlign: 'center', color: theme.colors.textMuted, fontSize: theme.typography.sizes.lg }}>
-              No use cases match the current filters. Try adjusting your selection.
+        {smartSearchMode ? (
+          /* Smart Search Mode */
+          <div>
+            <div style={{
+              display: 'flex', gap: 8, marginBottom: 16,
+            }}>
+              <input
+                type="text"
+                value={smartQuery}
+                onChange={e => setSmartQuery(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleSmartSearch(); }}
+                placeholder="Describe what you want to achieve, e.g. 'automate invoice processing' or 'predict customer churn'"
+                style={{
+                  flex: 1, padding: '10px 14px', borderRadius: theme.radii.lg,
+                  border: '1px solid ' + theme.colors.borderMedium, background: theme.colors.surface,
+                  fontSize: theme.typography.sizes.md, fontFamily: 'inherit', color: theme.colors.textPrimary,
+                  outline: 'none', transition: `border-color ${theme.transitions.fast}`,
+                }}
+                onFocus={e => { e.currentTarget.style.borderColor = theme.colors.primary; }}
+                onBlur={e => { e.currentTarget.style.borderColor = theme.colors.borderMedium; }}
+              />
+              <button onClick={handleSmartSearch} disabled={smartLoading || !smartQuery.trim()} style={{
+                padding: '10px 20px', borderRadius: theme.radii.lg, border: 'none',
+                background: theme.colors.primary, color: '#fff',
+                fontSize: theme.typography.sizes.md, fontWeight: theme.typography.weights.semibold,
+                cursor: smartLoading ? 'wait' : 'pointer', fontFamily: 'inherit',
+                opacity: (!smartQuery.trim() || smartLoading) ? 0.6 : 1,
+                transition: `all ${theme.transitions.fast}`,
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                {smartLoading ? 'Searching...' : 'Search'}
+              </button>
             </div>
-          )}
-          {filteredUseCases.map((uc, i) => (
-            <UseCaseCard
-              key={uc.name + '-' + i}
-              useCase={uc}
-              index={i}
-              highlightedBlock={selectedBlock}
-              showCompare={!!compareState}
-              isCompareSelected={compareState?.isSelected(uc.name)}
-              onCompareToggle={compareState?.toggleCompare}
-              onAddToRoadmap={roadmapState?.addToRoadmap}
-              isInRoadmap={roadmapState?.isInRoadmap(uc.name)}
-            />
-          ))}
-        </div>
+
+            {smartLoading && (
+              <div style={{ padding: 48, textAlign: 'center', color: theme.colors.textMuted, fontSize: theme.typography.sizes.lg }}>
+                <div style={{ fontSize: 24, marginBottom: 8, animation: 'pulse 1.5s ease-in-out infinite' }}>&#10024;</div>
+                AI is analyzing your request and matching use cases...
+              </div>
+            )}
+
+            {!smartLoading && smartResults && smartMatchedUseCases.length === 0 && (
+              <div style={{ padding: 48, textAlign: 'center', color: theme.colors.textMuted, fontSize: theme.typography.sizes.lg }}>
+                No matching use cases found. Try rephrasing your description.
+              </div>
+            )}
+
+            {!smartLoading && smartMatchedUseCases.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textMuted, marginBottom: 4 }}>
+                  {smartMatchedUseCases.length} matches found
+                  <span style={{ fontSize: theme.typography.sizes.xs, color: theme.colors.primary + '88', background: theme.colors.primary + '12', padding: '1px 6px', borderRadius: theme.radii.md, marginLeft: 8 }}>AI-powered</span>
+                </div>
+                {smartMatchedUseCases.map(({ useCase: uc, explanation }, i) => (
+                  <div key={uc.name} style={{
+                    animation: 'fadeSlideIn 0.3s ease-out both',
+                    animationDelay: `${i * 60}ms`,
+                  }}>
+                    <UseCaseCard
+                      useCase={uc}
+                      index={i}
+                      showCompare={!!compareState}
+                      isCompareSelected={compareState?.isSelected(uc.name)}
+                      onCompareToggle={compareState?.toggleCompare}
+                      onAddToRoadmap={roadmapState?.addToRoadmap}
+                      isInRoadmap={roadmapState?.isInRoadmap(uc.name)}
+                    />
+                    <div style={{
+                      margin: '-4px 0 0 16px', padding: '8px 14px',
+                      background: theme.colors.primary + '08', borderRadius: `0 0 ${theme.radii.lg}px ${theme.radii.lg}px`,
+                      borderLeft: '2px solid ' + theme.colors.primary + '40',
+                      fontSize: theme.typography.sizes.lg, color: theme.colors.textTertiary, lineHeight: 1.5,
+                    }}>
+                      {explanation}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!smartLoading && !smartResults && (
+              <div style={{ padding: 48, textAlign: 'center', color: theme.colors.textMuted }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>&#10024;</div>
+                <div style={{ fontSize: theme.typography.sizes.lg, marginBottom: 4 }}>Describe what you want to achieve</div>
+                <div style={{ fontSize: theme.typography.sizes.base }}>AI will match your goals to the most relevant use cases and explain why each one fits.</div>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Filter Mode (existing) */
+          <>
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              marginBottom: 14, flexWrap: 'wrap', gap: 8,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <SectionLabel>{filteredUseCases.length} Use Cases</SectionLabel>
+                {filteredUseCases.length > 0 && <MaturityBadge avg={overallAvg} />}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ fontSize: theme.typography.sizes.sm, color: theme.colors.textDisabled }}>Sort:</span>
+                {[['name', 'Name'], ['md', 'Maturity \u2193'], ['ma', 'Maturity \u2191']].map(([id, label]) => (
+                  <button key={id} onClick={() => setSortBy(id)} style={{
+                    padding: '4px 10px', borderRadius: theme.radii.md, border: 'none',
+                    fontSize: theme.typography.sizes.sm, fontWeight: theme.typography.weights.semibold,
+                    background: sortBy === id ? theme.colors.textPrimary : theme.colors.surfaceMuted,
+                    color: sortBy === id ? theme.colors.primary : theme.colors.textMuted,
+                    cursor: 'pointer', fontFamily: 'inherit', transition: `all ${theme.transitions.fast}`,
+                  }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{
+              display: 'flex', flexDirection: 'column', gap: 6,
+              maxHeight: 'calc(100vh - 260px)', overflowY: 'auto', paddingRight: 4,
+            }}>
+              {filteredUseCases.length === 0 && (
+                <div style={{ padding: 48, textAlign: 'center', color: theme.colors.textMuted, fontSize: theme.typography.sizes.lg }}>
+                  No use cases match the current filters. Try adjusting your selection.
+                </div>
+              )}
+              {filteredUseCases.map((uc, i) => (
+                <UseCaseCard
+                  key={uc.name + '-' + i}
+                  useCase={uc}
+                  index={i}
+                  highlightedBlock={selectedBlock}
+                  showCompare={!!compareState}
+                  isCompareSelected={compareState?.isSelected(uc.name)}
+                  onCompareToggle={compareState?.toggleCompare}
+                  onAddToRoadmap={roadmapState?.addToRoadmap}
+                  isInRoadmap={roadmapState?.isInRoadmap(uc.name)}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

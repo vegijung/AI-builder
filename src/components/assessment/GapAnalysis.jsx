@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   computeGapAnalysis, computeReadinessScore, computeDimensionScores,
   getRecommendedUseCases, generateExecutiveSummary, getReadinessInterpretation,
@@ -12,6 +12,7 @@ import { BuildingBlockTag } from '../shared/BuildingBlockTag';
 import { ReadinessRadar } from './ReadinessRadar';
 import { LeadCaptureCard } from './LeadCaptureCard';
 import { STRATEGIC_PRIORITIES, READINESS_DIMENSIONS } from '../../data/constants';
+import { fetchAISummary, fetchAIExplain } from '../../services/aiService';
 import { theme } from '../../styles/theme';
 
 const priorityMap = Object.fromEntries(STRATEGIC_PRIORITIES.map(p => [p.id, p.label]));
@@ -72,39 +73,76 @@ function ProfileSummary({ companyProfile, priorities }) {
 // ---------------------------------------------------------------------------
 // ExecutiveSummary
 // ---------------------------------------------------------------------------
-function ExecutiveSummary({ items }) {
+function ExecutiveSummary({ items, aiSummary, aiLoading, onRegenerate }) {
   if (!items || !items.length) return null;
+
+  const showAI = aiSummary && !aiLoading;
+
   return (
     <div style={{
       background: `linear-gradient(135deg, ${theme.colors.textPrimary}, #3a3530)`,
       borderRadius: theme.radii.xl, padding: 24, marginBottom: 24,
       boxShadow: theme.shadows.elevated, animation: 'fadeIn 0.3s ease-out',
     }}>
-      <h3 style={{ margin: '0 0 16px 0', fontSize: 16, fontWeight: theme.typography.weights.black, color: theme.colors.primary }}>
-        What to Do Next
-      </h3>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {items.map((item, i) => (
-          <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: theme.typography.weights.black, color: theme.colors.primary }}>
+          What to Do Next
+        </h3>
+        {(showAI || aiLoading) && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{
-              display: 'inline-flex', width: 24, height: 24, borderRadius: theme.radii.circle, flexShrink: 0,
-              background: theme.colors.primary + '25', color: theme.colors.primary,
-              fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.black,
-              alignItems: 'center', justifyContent: 'center', marginTop: 1,
+              fontSize: theme.typography.sizes.sm, color: theme.colors.primary + 'aa',
+              background: theme.colors.primary + '15', padding: '2px 8px',
+              borderRadius: theme.radii.md, fontWeight: theme.typography.weights.semibold,
             }}>
-              {i + 1}
+              {aiLoading ? 'Generating...' : 'AI-generated'}
             </span>
-            <div>
-              <div style={{ fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, color: theme.colors.primary, marginBottom: 2 }}>
-                {item.title}
-              </div>
-              <div style={{ fontSize: theme.typography.sizes.xl, color: '#ccc8c4', lineHeight: 1.5 }}>
-                {item.text}
+            {showAI && onRegenerate && (
+              <button onClick={onRegenerate} style={{
+                border: 'none', background: 'none', color: theme.colors.primary + '88',
+                fontSize: theme.typography.sizes.sm, cursor: 'pointer', fontFamily: 'inherit',
+                padding: '2px 4px', textDecoration: 'underline',
+              }}>
+                Regenerate
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {showAI ? (
+        <div style={{ fontSize: theme.typography.sizes.xl, color: '#ccc8c4', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
+          {aiSummary}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {items.map((item, i) => (
+            <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <span style={{
+                display: 'inline-flex', width: 24, height: 24, borderRadius: theme.radii.circle, flexShrink: 0,
+                background: theme.colors.primary + '25', color: theme.colors.primary,
+                fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.black,
+                alignItems: 'center', justifyContent: 'center', marginTop: 1,
+              }}>
+                {i + 1}
+              </span>
+              <div>
+                <div style={{ fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, color: theme.colors.primary, marginBottom: 2 }}>
+                  {item.title}
+                </div>
+                <div style={{ fontSize: theme.typography.sizes.xl, color: '#ccc8c4', lineHeight: 1.5 }}>
+                  {item.text}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+          {aiLoading && (
+            <div style={{ fontSize: theme.typography.sizes.base, color: theme.colors.primary + '66', fontStyle: 'italic', marginTop: 4 }}>
+              AI is preparing a personalized summary...
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -192,8 +230,10 @@ function FitIndicator({ score }) {
 // ---------------------------------------------------------------------------
 // RecommendationCard
 // ---------------------------------------------------------------------------
-function RecommendationCard({ rec, index, readinessScore, areaRatings, priorities, dimensionScores, valueChainShortLabels, onAddToRoadmap, buildingBlockMap }) {
+function RecommendationCard({ rec, index, readinessScore, areaRatings, priorities, dimensionScores, valueChainShortLabels, onAddToRoadmap, buildingBlockMap, companyProfile }) {
   const [expanded, setExpanded] = useState(false);
+  const [aiExplanation, setAiExplanation] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const uc = rec.useCase;
   const ml = getMaturityLevel(rec.maturity);
   const whyText = useMemo(() => generateWhyText(rec, readinessScore, areaRatings, priorities), [rec, readinessScore, areaRatings, priorities]);
@@ -308,6 +348,52 @@ function RecommendationCard({ rec, index, readinessScore, areaRatings, prioritie
               ))}
             </div>
           )}
+
+          {/* AI Explain */}
+          {aiExplanation ? (
+            <div style={{
+              background: theme.colors.primary + '08', borderRadius: theme.radii.lg, padding: 12, marginTop: 10,
+              border: '1px solid ' + theme.colors.primary + '20',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <div style={{ fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.bold, color: theme.colors.primary }}>
+                  AI Explanation
+                </div>
+                <span style={{ fontSize: theme.typography.sizes.xs, color: theme.colors.primary + '88', background: theme.colors.primary + '12', padding: '1px 6px', borderRadius: theme.radii.md }}>AI-generated</span>
+              </div>
+              <p style={{ margin: 0, fontSize: theme.typography.sizes.lg, color: theme.colors.textSecondary, lineHeight: 1.6 }}>
+                {aiExplanation}
+              </p>
+            </div>
+          ) : (
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (aiLoading) return;
+                setAiLoading(true);
+                const result = await fetchAIExplain(
+                  { ...uc, avgMaturity: rec.maturity },
+                  companyProfile,
+                  areaRatings[uc.valueChainArea],
+                );
+                setAiExplanation(result);
+                setAiLoading(false);
+              }}
+              disabled={aiLoading}
+              style={{
+                marginTop: 10, padding: '7px 14px', borderRadius: theme.radii.lg,
+                border: '1px solid ' + theme.colors.primary + '40',
+                background: theme.colors.primary + '08', color: theme.colors.primary,
+                fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.semibold,
+                cursor: aiLoading ? 'wait' : 'pointer', fontFamily: 'inherit',
+                transition: `all ${theme.transitions.fast}`,
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              {aiLoading ? 'Generating...' : 'Explain this use case'}
+              {!aiLoading && <span style={{ fontSize: 14 }}>&#10024;</span>}
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -321,6 +407,8 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isM
   const { valueChainShortLabels, useCases, buildingBlockMap } = useData();
   const [showReadinessDetail, setShowReadinessDetail] = useState(false);
   const [showGapAnalysis, setShowGapAnalysis] = useState(false);
+  const [aiSummary, setAiSummary] = useState(null);
+  const [aiSummaryLoading, setAiSummaryLoading] = useState(false);
 
   const gaps = useMemo(() => computeGapAnalysis(areaRatings, useCases, buildingBlockMap), [areaRatings, useCases, buildingBlockMap]);
   const readinessScore = useMemo(() => computeReadinessScore(readinessRatings), [readinessRatings]);
@@ -333,6 +421,19 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isM
     () => generateExecutiveSummary(dimensionScores, recommendations, priorities, areaRatings, useCases),
     [dimensionScores, recommendations, priorities, areaRatings, useCases],
   );
+
+  const loadAISummary = useCallback(async () => {
+    setAiSummaryLoading(true);
+    const result = await fetchAISummary({
+      dimensionScores, recommendations, priorities, areaRatings, companyProfile, readinessScore,
+    });
+    setAiSummary(result);
+    setAiSummaryLoading(false);
+  }, [dimensionScores, recommendations, priorities, areaRatings, companyProfile, readinessScore]);
+
+  useEffect(() => {
+    if (recommendations.length > 0 && !aiSummary) loadAISummary();
+  }, [recommendations.length > 0]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const overallReadiness = getMaturityLevel(readinessScore);
 
@@ -349,7 +450,7 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isM
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
       <ProfileSummary companyProfile={companyProfile} priorities={priorities} />
 
-      <ExecutiveSummary items={execSummary} />
+      <ExecutiveSummary items={execSummary} aiSummary={aiSummary} aiLoading={aiSummaryLoading} onRegenerate={loadAISummary} />
 
       <LeadCaptureCard
         selectedAreas={selectedAreas || Object.keys(areaRatings)}
@@ -379,6 +480,7 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isM
             valueChainShortLabels={valueChainShortLabels}
             onAddToRoadmap={onAddToRoadmap}
             buildingBlockMap={buildingBlockMap}
+            companyProfile={companyProfile}
           />
         ))}
       </div>
