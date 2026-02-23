@@ -309,7 +309,7 @@ export function generateAssessmentHtml({ companyProfile, executiveSummary, recom
     ${profileHtml}
     ${summaryHtml}
     ${readinessHtml}
-    <div class="section-title blk">Recommended AI Use Cases</div>
+    <div class="section-title">Recommended AI Use Cases</div>
     ${recsHtml}
     ${nextStepsHtml}
   </div>
