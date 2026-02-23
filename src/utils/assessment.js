@@ -1,5 +1,5 @@
 import { USE_CASES as staticUseCases } from '../data/useCases';
-import { READINESS_DIMENSIONS, STRATEGIC_PRIORITIES, CATEGORY_READINESS_MAP, VALUE_CHAIN_SHORT_LABELS, ADOPTION_LEVELS } from '../data/constants';
+import { READINESS_DIMENSIONS, STRATEGIC_PRIORITIES, CATEGORY_READINESS_MAP, VALUE_CHAIN_SHORT_LABELS, ADOPTION_LEVELS, MMG_EXPERTISE } from '../data/constants';
 import { getUseCaseAvgMaturity, getBlockCategory, getMaturityLevel } from './maturity';
 
 export function computeAreaMaturity(area, useCases, blockMap) {
@@ -146,7 +146,7 @@ export function getTrafficLight(score) {
   return { color: '#50D8A8', label: 'Strong' };
 }
 
-export function generateExecutiveSummary(dimensionScores, recommendations, priorities, areaRatings, useCases) {
+export function generateExecutiveSummary(dimensionScores, recommendations, priorities, areaRatings, useCases, readinessScore, companyProfile) {
   const items = [];
   const dimLabels = Object.fromEntries(READINESS_DIMENSIONS.map(d => [d.id, d.label]));
   const shortLabels = VALUE_CHAIN_SHORT_LABELS;
@@ -184,7 +184,53 @@ export function generateExecutiveSummary(dimensionScores, recommendations, prior
     }
   }
 
+  const score = readinessScore ?? 3;
+  const tier = score < 2.5 ? 'low' : score < 3.8 ? 'mid' : 'high';
+  let mmgText = MMG_EXPERTISE.readinessTierMessages[tier];
+  const industry = companyProfile?.industry;
+  if (industry && MMG_EXPERTISE.industryCredentials[industry]) {
+    mmgText += ' ' + MMG_EXPERTISE.industryCredentials[industry];
+  }
+  items.push({ title: 'How MMG Can Help', text: mmgText });
+
   return items;
+}
+
+export function getImplementationComplexity(rec, dimensionScores) {
+  const blockCount = (rec.useCase.buildingBlocks || []).length;
+  let level = blockCount <= 3 ? 0 : blockCount <= 5 ? 1 : 2;
+
+  const cats = {};
+  (rec.useCase.buildingBlocks || []).forEach(bName => {
+    const cat = getBlockCategory(bName, null);
+    if (cat) cats[cat] = true;
+  });
+  const relevantDims = new Set();
+  Object.keys(cats).forEach(cat => {
+    const mapping = CATEGORY_READINESS_MAP[cat];
+    if (mapping) mapping.dims.forEach(d => relevantDims.add(d));
+  });
+  if (relevantDims.size > 0 && dimensionScores) {
+    const avg = [...relevantDims].reduce((s, d) => s + (dimensionScores[d] || 3), 0) / relevantDims.size;
+    if (avg < 2.5) level = Math.min(2, level + 1);
+  }
+
+  const levels = [
+    { level: 'Low', color: '#50D8A8', hint: 'Straightforward to implement with current capabilities.' },
+    { level: 'Medium', color: '#FBB740', hint: 'Moderate effort -- may require process adjustments or new tooling.' },
+    { level: 'High', color: '#D94070', hint: 'Requires investment in data, infrastructure, or talent readiness.' },
+  ];
+  return levels[level];
+}
+
+export function getDominantCategory(uc, blockMap) {
+  const cats = {};
+  (uc.buildingBlocks || []).forEach(bName => {
+    const cat = getBlockCategory(bName, blockMap);
+    if (cat) cats[cat] = (cats[cat] || 0) + 1;
+  });
+  const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1]);
+  return sorted.length ? sorted[0][0] : null;
 }
 
 export function generateWhyText(rec, readinessScore, areaRatings, priorities) {

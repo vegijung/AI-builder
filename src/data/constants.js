@@ -108,6 +108,41 @@ export const CATEGORY_READINESS_MAP = {
   'Coding & Development': { dims: ['infra', 'talent'], reason: 'AI development tools need modern toolchains and technical teams ready to integrate them.' },
 };
 
+export const MMG_EXPERTISE = {
+  tagline: 'From strategy to production -- MMG delivers end-to-end AI transformation.',
+  stats: { engagements: '50+', industries: 6, avgTimeToValue: '8-12 weeks' },
+  industryCredentials: {
+    'Financial Services': 'Guided 12+ financial institutions through AI-powered risk and compliance automation.',
+    'Manufacturing': 'Delivered predictive maintenance and supply chain optimization for 3 leading manufacturers.',
+    'Retail & E-Commerce': 'Implemented AI-driven personalization and demand forecasting for major retail brands.',
+    'Healthcare': 'Enabled clinical decision support and operational efficiency through AI for 5 healthcare organizations.',
+    'Technology': 'Helped 10+ tech companies integrate AI into their product offerings and internal operations.',
+    'Professional Services': 'Deployed knowledge management and automation solutions for leading consulting and legal firms.',
+    'Energy & Utilities': 'Built predictive asset management and grid optimization models for energy providers.',
+    'Public Sector': 'Supported government agencies in responsible AI adoption for citizen services and operations.',
+    'Other': 'Delivered AI strategy and implementation across diverse industries.',
+  },
+  readinessTierMessages: {
+    low: 'MMG specializes in building AI foundations -- data governance, team enablement, and change management -- to help organizations like yours become AI-ready.',
+    mid: 'MMG helps organizations at your stage prioritize the right use cases, run successful pilots, and build internal capabilities for scale.',
+    high: 'Your organization is ready to scale. MMG accelerates implementation with proven frameworks, technical delivery, and organizational change support.',
+  },
+  categoryStrengths: {
+    'Understanding & Summarization': 'MMG has deployed NLP and document intelligence solutions across 10+ enterprise clients.',
+    'Extraction & Structuring': 'MMG has automated data extraction pipelines for finance, legal, and operations teams.',
+    'Generation & Creativity': 'MMG has implemented generative AI workflows for content, design, and product development.',
+    'Prediction & Optimization': 'MMG has built 15+ predictive models across finance, logistics, and operations.',
+    'Interaction & Assistance': 'MMG has launched conversational AI and knowledge assistants for customer-facing and internal teams.',
+    'Automation & Execution': 'MMG has delivered end-to-end process automation combining AI with RPA and workflow engines.',
+    'Coding & Development': 'MMG has integrated AI-powered development tools to accelerate engineering productivity.',
+  },
+  nextSteps: [
+    { title: 'Free Assessment Review', description: 'An MMG consultant reviews your results and prepares a tailored briefing.' },
+    { title: '30-Min Strategy Call', description: 'We walk through your top opportunities and discuss feasibility for your context.' },
+    { title: 'Custom Roadmap', description: 'Receive a detailed implementation plan with timelines, resources, and quick wins.' },
+  ],
+};
+
 export const ROADMAP_PHASES = [
   { id: 'quickWins', label: 'Quick Wins', timeframe: '0-3 months', description: 'High maturity, immediate value', color: '#50D8A8' },
   { id: 'mediumTerm', label: 'Medium Term', timeframe: '3-12 months', description: 'Builds on quick wins', color: '#5BC8D4' },

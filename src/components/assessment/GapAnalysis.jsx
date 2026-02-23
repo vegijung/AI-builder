@@ -3,6 +3,7 @@ import {
   computeGapAnalysis, computeReadinessScore, computeDimensionScores,
   getRecommendedUseCases, generateExecutiveSummary, getReadinessInterpretation,
   getTrafficLight, getFitLabel, generateWhyText,
+  getImplementationComplexity, getDominantCategory,
 } from '../../utils/assessment';
 import { getMaturityLevel } from '../../utils/maturity';
 import { useData } from '../../contexts/DataContext';
@@ -10,7 +11,7 @@ import { SectionLabel } from '../shared/SectionLabel';
 import { BuildingBlockTag } from '../shared/BuildingBlockTag';
 import { ReadinessRadar } from './ReadinessRadar';
 import { LeadCaptureCard } from './LeadCaptureCard';
-import { READINESS_DIMENSIONS } from '../../data/constants';
+import { READINESS_DIMENSIONS, MMG_EXPERTISE } from '../../data/constants';
 import { fetchAISummary } from '../../services/aiService';
 import { AiBadge, AiSkeleton } from '../shared/AiBadge';
 import { generateAssessmentHtml, openHtmlReport } from '../../utils/exportHtml';
@@ -152,7 +153,7 @@ function ReadinessBreakdown({ readinessRatings, dimensionScores }) {
 // ---------------------------------------------------------------------------
 // RecommendationCard (simplified)
 // ---------------------------------------------------------------------------
-function RecommendationCard({ rec, index, readinessScore, areaRatings, priorities, valueChainShortLabels, onAddToRoadmap, buildingBlockMap, isInRoadmap }) {
+function RecommendationCard({ rec, index, readinessScore, areaRatings, priorities, valueChainShortLabels, onAddToRoadmap, buildingBlockMap, isInRoadmap, dimensionScores }) {
   const [expanded, setExpanded] = useState(false);
   const [showBlocks, setShowBlocks] = useState(false);
   const uc = rec.useCase;
@@ -164,6 +165,9 @@ function RecommendationCard({ rec, index, readinessScore, areaRatings, prioritie
     const firstSentence = whyText.split('. ')[0];
     return firstSentence.length > 90 ? firstSentence.slice(0, 87) + '...' : firstSentence + '.';
   }, [whyText]);
+  const complexity = useMemo(() => getImplementationComplexity(rec, dimensionScores), [rec, dimensionScores]);
+  const dominantCat = useMemo(() => getDominantCategory(uc, buildingBlockMap), [uc, buildingBlockMap]);
+  const mmgStrength = dominantCat ? MMG_EXPERTISE.categoryStrengths[dominantCat] : null;
   const inRoadmap = isInRoadmap?.(uc.name);
 
   return (
@@ -246,6 +250,26 @@ function RecommendationCard({ rec, index, readinessScore, areaRatings, prioritie
             </p>
           </div>
 
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{
+                width: 8, height: 8, borderRadius: theme.radii.circle, background: complexity.color, flexShrink: 0,
+              }} />
+              <span style={{ fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.semibold, color: complexity.color }}>
+                {complexity.level} Complexity
+              </span>
+              <span style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textMuted }}>
+                &mdash; {complexity.hint}
+              </span>
+            </div>
+            {mmgStrength && (
+              <div style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textMuted, lineHeight: 1.4, paddingLeft: 16 }}>
+                <span style={{ fontWeight: theme.typography.weights.bold, color: theme.colors.primary }}>MMG</span>{' '}
+                {mmgStrength}
+              </div>
+            )}
+          </div>
+
           <button
             onClick={(e) => { e.stopPropagation(); setShowBlocks(!showBlocks); }}
             style={{
@@ -271,36 +295,57 @@ function RecommendationCard({ rec, index, readinessScore, areaRatings, prioritie
 }
 
 // ---------------------------------------------------------------------------
-// BookingBanner (shown after lead capture)
+// NextStepsSection (shown after lead capture)
 // ---------------------------------------------------------------------------
-function BookingBanner() {
+function NextStepsSection() {
   const url = BOOKING_URL || 'mailto:janis.locher@mmgmc.ch?subject=AI%20Strategy%20Session';
+  const steps = MMG_EXPERTISE.nextSteps;
+  const stats = MMG_EXPERTISE.stats;
   return (
     <div style={{
       background: `linear-gradient(135deg, ${theme.colors.textPrimary}, #3a3530)`,
-      borderRadius: theme.radii.xl, padding: '20px 24px', marginTop: 24,
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12,
+      borderRadius: theme.radii.xl, padding: '24px 28px', marginTop: 24,
       boxShadow: theme.shadows.elevated, animation: 'fadeIn 0.3s ease-out',
     }}>
-      <div>
-        <div style={{ fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.bold, color: theme.colors.primary, marginBottom: 2 }}>
-          Ready to take the next step?
-        </div>
-        <div style={{ fontSize: theme.typography.sizes.lg, color: '#ccc8c4' }}>
-          Book a free 30-minute strategy session with an MMG AI consultant.
+      <div style={{ fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.black, color: theme.colors.primary, marginBottom: 16 }}>
+        What Happens Next
+      </div>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 20 }}>
+        {steps.map((step, i) => (
+          <div key={i} style={{ flex: '1 1 180px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <span style={{
+              display: 'inline-flex', width: 28, height: 28, borderRadius: theme.radii.circle, flexShrink: 0,
+              background: theme.colors.primary + '25', color: theme.colors.primary,
+              fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.black,
+              alignItems: 'center', justifyContent: 'center',
+            }}>{i + 1}</span>
+            <div>
+              <div style={{ fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.bold, color: '#fff', marginBottom: 2 }}>
+                {step.title}
+              </div>
+              <div style={{ fontSize: theme.typography.sizes.lg, color: '#b0aca8', lineHeight: 1.4 }}>
+                {step.description}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <a href={url} target="_blank" rel="noopener noreferrer" style={{
+          display: 'inline-block', padding: '12px 28px', borderRadius: theme.radii.xl,
+          background: theme.colors.primary, color: theme.colors.textPrimary,
+          fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.bold,
+          textDecoration: 'none', transition: `opacity ${theme.transitions.fast}`,
+        }}
+          onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
+          onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+        >
+          Book a Free Session &rarr;
+        </a>
+        <div style={{ fontSize: theme.typography.sizes.base, color: '#8a8580' }}>
+          Trusted across {stats.industries} industries &middot; {stats.engagements} AI engagements delivered &middot; Avg. {stats.avgTimeToValue} to value
         </div>
       </div>
-      <a href={url} target="_blank" rel="noopener noreferrer" style={{
-        display: 'inline-block', padding: '10px 24px', borderRadius: theme.radii.xl,
-        background: theme.colors.primary, color: theme.colors.textPrimary,
-        fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.bold,
-        textDecoration: 'none', transition: `opacity ${theme.transitions.fast}`, flexShrink: 0,
-      }}
-        onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
-        onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-      >
-        Book a Session &rarr;
-      </a>
     </div>
   );
 }
@@ -323,8 +368,8 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isI
     [areaRatings, readinessRatings, useCases, buildingBlockMap, priorities, dimensionScores],
   );
   const execSummary = useMemo(
-    () => generateExecutiveSummary(dimensionScores, recommendations, priorities, areaRatings, useCases),
-    [dimensionScores, recommendations, priorities, areaRatings, useCases],
+    () => generateExecutiveSummary(dimensionScores, recommendations, priorities, areaRatings, useCases, readinessScore, companyProfile),
+    [dimensionScores, recommendations, priorities, areaRatings, useCases, readinessScore, companyProfile],
   );
 
   const lowestDimension = useMemo(() => {
@@ -374,12 +419,25 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isI
       onAddToRoadmap={onAddToRoadmap}
       buildingBlockMap={buildingBlockMap}
       isInRoadmap={isInRoadmap}
+      dimensionScores={dimensionScores}
     />
   );
 
   return (
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
       <ExecutiveSummary items={execSummary} aiSummary={aiSummary} aiLoading={aiSummaryLoading} onRegenerate={loadAISummary} />
+
+      <div style={{
+        textAlign: 'center', padding: '6px 0 14px', fontSize: theme.typography.sizes.sm,
+        color: theme.colors.textDisabled, letterSpacing: 0.3,
+      }}>
+        Built by <strong style={{ color: theme.colors.textMuted }}>MMG Management Consulting</strong> &mdash; {MMG_EXPERTISE.stats.engagements} AI engagements across {MMG_EXPERTISE.stats.industries} industries.{' '}
+        <a href="https://www.mmgmc.ch" target="_blank" rel="noopener noreferrer"
+          style={{ color: theme.colors.primary, textDecoration: 'none' }}
+        >
+          www.mmgmc.ch
+        </a>
+      </div>
 
       {/* Top 3 recommendations -- always visible */}
       <SectionLabel>Your Top Recommendations</SectionLabel>
@@ -457,8 +515,8 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isI
         </div>
       )}
 
-      {/* Booking banner -- shown after lead capture */}
-      {leadSubmitted && <BookingBanner />}
+      {/* Next steps -- shown after lead capture */}
+      {leadSubmitted && <NextStepsSection />}
 
       {/* Collapsible: Readiness Overview */}
       <div style={{ marginTop: 28 }}>
