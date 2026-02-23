@@ -18,7 +18,24 @@ const MMG_STYLES = `
   .dots { display: inline-flex; gap: 3px; }
   .dot { width: 6px; height: 6px; border-radius: 50%; }
   .footer { text-align: center; padding: 24px 40px; color: #8E8E93; font-size: 12px; border-top: 1px solid #E2E0DC; margin-top: 32px; }
-  @media print { body { background: #fff; } .header { break-after: avoid; } .section { break-inside: avoid; } }
+
+  @page { margin: 12mm 10mm; }
+
+  @media print {
+    * { overflow: visible !important; float: none !important; }
+    body { background: #fff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+    .header { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; page-break-after: avoid; }
+    .card { border-radius: 6px !important; box-shadow: none !important; page-break-inside: avoid; break-inside: avoid; }
+    .rec-card { page-break-inside: avoid; break-inside: avoid; margin-bottom: 6px !important; }
+    .recs-section { page-break-inside: auto; break-inside: auto; }
+    .section-title { page-break-after: avoid; break-after: avoid; }
+    .footer { page-break-inside: avoid; break-inside: avoid; }
+    .next-steps-card { page-break-inside: avoid; break-inside: avoid; }
+    .next-steps-strip { display: block !important; }
+    .next-steps-strip > div { display: block !important; margin-bottom: 10px; min-width: 0 !important; }
+    .container { padding: 20px 24px !important; }
+    .accent { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  }
 `;
 
 function maturityDots(score) {
@@ -109,7 +126,7 @@ export function generateAssessmentHtml({ companyProfile, executiveSummary, recom
     : '';
 
   const summaryHtml = executiveSummary
-    ? `<div class="card" style="margin-bottom:20px;background:#1E293B;color:#ccc8c4;">
+    ? `<div class="card" style="margin-bottom:20px;background:#1E293B;color:#ccc8c4;page-break-inside:avoid;">
         <div style="font-weight:900;font-size:15px;color:#FBB740;margin-bottom:10px;">Executive Summary</div>
         <div style="font-size:13px;line-height:1.7;white-space:pre-line;">${executiveSummary}</div>
       </div>`
@@ -122,7 +139,7 @@ export function generateAssessmentHtml({ companyProfile, executiveSummary, recom
     const fitLabel = rec.score >= 4 ? 'Strong Fit' : rec.score >= 3 ? 'Good Fit' : rec.score >= 2 ? 'Moderate Fit' : 'Weak Fit';
     const fitColor = FIT_COLORS[fitLabel] || '#8E8E93';
     const areaLabel = (valueChainShortLabels || {})[uc.valueChainArea] || uc.valueChainArea || '';
-    return `<div class="card" style="margin-bottom:10px;border-left:3px solid ${fitColor};">
+    return `<div class="card rec-card" style="margin-bottom:10px;border-left:3px solid ${fitColor};">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
         <div style="display:flex;align-items:center;gap:8px;">
           <span style="display:inline-flex;width:20px;height:20px;border-radius:50%;background:${fitColor}20;color:${fitColor};font-size:11px;font-weight:900;align-items:center;justify-content:center;">${i + 1}</span>
@@ -161,9 +178,9 @@ export function generateAssessmentHtml({ companyProfile, executiveSummary, recom
 
   const areaCount = Object.keys(areaRatings || {}).length;
 
-  const nextStepsHtml = `<div class="card" style="margin-top:24px;background:#1E293B;color:#ccc8c4;">
+  const nextStepsHtml = `<div class="card next-steps-card" style="margin-top:24px;background:#1E293B;color:#ccc8c4;">
     <div style="font-weight:900;font-size:15px;color:#FBB740;margin-bottom:14px;">What Happens Next</div>
-    <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;">
+    <div class="next-steps-strip" style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;">
       <div style="flex:1;min-width:160px;">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
           <span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:#FBB74025;color:#FBB740;font-size:12px;font-weight:900;align-items:center;justify-content:center;">1</span>
@@ -238,7 +255,7 @@ export function generateAssessmentHtml({ companyProfile, executiveSummary, recom
     ${profileHtml}
     ${summaryHtml}
     ${readinessHtml}
-    <div class="section">
+    <div class="section recs-section">
       <div class="section-title">Recommended AI Use Cases</div>
       ${recsHtml}
     </div>
@@ -259,9 +276,11 @@ export function generateAssessmentHtml({ companyProfile, executiveSummary, recom
 
 export function openHtmlReport(html) {
   const w = window.open('', '_blank');
-  if (w) {
-    w.document.write(html);
-    w.document.close();
-    w.onload = () => w.print();
-  }
+  if (!w) return;
+  w.document.write(html);
+  w.document.close();
+  // Delay print so the browser fully lays out the page and loads the font
+  setTimeout(() => {
+    try { w.print(); } catch { /* popup blocked or closed */ }
+  }, 600);
 }
