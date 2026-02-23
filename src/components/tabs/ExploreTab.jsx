@@ -240,10 +240,27 @@ export function ExploreTab({ searchNavigation, compareState, roadmapState, asses
             )}
 
             {!smartLoading && !smartResults && (
-              <div style={{ padding: 48, textAlign: 'center', color: theme.colors.textMuted }}>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>&#10024;</div>
-                <div style={{ fontSize: theme.typography.sizes.lg, marginBottom: 4 }}>Describe what you want to achieve</div>
-                <div style={{ fontSize: theme.typography.sizes.base }}>AI will match your goals to the most relevant use cases and explain why each one fits.</div>
+              <div>
+                <div style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textMuted, marginBottom: 12 }}>
+                  {filteredUseCases.length} use cases available &mdash; search above or browse below
+                </div>
+                <div style={{
+                  display: 'flex', flexDirection: 'column', gap: 6,
+                  maxHeight: 'calc(100vh - 300px)', overflowY: 'auto', paddingRight: 4,
+                }}>
+                  {filteredUseCases.map((uc, i) => (
+                    <UseCaseCard
+                      key={uc.name + '-' + i}
+                      useCase={uc}
+                      index={i}
+                      showCompare={!!compareState}
+                      isCompareSelected={compareState?.isSelected(uc.name)}
+                      onCompareToggle={compareState?.toggleCompare}
+                      onAddToRoadmap={roadmapState?.addToRoadmap}
+                      isInRoadmap={roadmapState?.isInRoadmap(uc.name)}
+                    />
+                  ))}
+                </div>
               </div>
             )}
 

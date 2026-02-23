@@ -93,7 +93,7 @@ export function LeadCaptureCard({
     }
   };
 
-  const bookingHref = BOOKING_URL || 'mailto:info@mmgmc.ch?subject=AI%20Assessment%20Follow-up';
+  const bookingHref = BOOKING_URL || 'mailto:janis.locher@mmgmc.ch?subject=AI%20Assessment%20Follow-up';
   const recCount = recommendationCount || 0;
 
   if (leadSubmitted) {

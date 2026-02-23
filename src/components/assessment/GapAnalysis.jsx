@@ -154,6 +154,7 @@ function ReadinessBreakdown({ readinessRatings, dimensionScores }) {
 // ---------------------------------------------------------------------------
 function RecommendationCard({ rec, index, readinessScore, areaRatings, priorities, valueChainShortLabels, onAddToRoadmap, buildingBlockMap, isInRoadmap }) {
   const [expanded, setExpanded] = useState(false);
+  const [showBlocks, setShowBlocks] = useState(false);
   const uc = rec.useCase;
   const ml = getMaturityLevel(rec.maturity);
   const fit = getFitLabel(rec.score);
@@ -233,19 +234,8 @@ function RecommendationCard({ rec, index, readinessScore, areaRatings, prioritie
 
       {expanded && (
         <div style={{ padding: '0 16px 16px', borderTop: '1px solid ' + theme.colors.borderLight, animation: 'fadeIn 0.2s ease-out' }}>
-          <div style={{ marginTop: 12, marginBottom: 14 }}>
-            <div style={{ fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.semibold, color: theme.colors.textMuted, marginBottom: 6 }}>
-              AI Building Blocks
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-              {(uc.buildingBlocks || []).map(bName => (
-                <BuildingBlockTag key={bName} name={bName} showScore />
-              ))}
-            </div>
-          </div>
-
           <div style={{
-            background: theme.colors.surfaceAlt, borderRadius: theme.radii.lg, padding: 12,
+            background: theme.colors.surfaceAlt, borderRadius: theme.radii.lg, padding: 12, marginTop: 12,
             border: '1px solid ' + theme.colors.borderLight,
           }}>
             <div style={{ fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.bold, color: theme.colors.textPrimary, marginBottom: 4 }}>
@@ -255,6 +245,25 @@ function RecommendationCard({ rec, index, readinessScore, areaRatings, prioritie
               {whyText}
             </p>
           </div>
+
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowBlocks(!showBlocks); }}
+            style={{
+              background: 'none', border: 'none', padding: '8px 0 0 0',
+              color: theme.colors.textMuted, fontSize: theme.typography.sizes.base,
+              cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline',
+              display: 'flex', alignItems: 'center', gap: 4,
+            }}
+          >
+            {showBlocks ? 'Hide' : 'Show'} building blocks ({(uc.buildingBlocks || []).length})
+          </button>
+          {showBlocks && (
+            <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 5, animation: 'fadeIn 0.2s ease-out' }}>
+              {(uc.buildingBlocks || []).map(bName => (
+                <BuildingBlockTag key={bName} name={bName} showScore />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -265,7 +274,7 @@ function RecommendationCard({ rec, index, readinessScore, areaRatings, prioritie
 // BookingBanner (shown after lead capture)
 // ---------------------------------------------------------------------------
 function BookingBanner() {
-  const url = BOOKING_URL || 'mailto:info@mmgmc.ch?subject=AI%20Strategy%20Session';
+  const url = BOOKING_URL || 'mailto:janis.locher@mmgmc.ch?subject=AI%20Strategy%20Session';
   return (
     <div style={{
       background: `linear-gradient(135deg, ${theme.colors.textPrimary}, #3a3530)`,
@@ -345,12 +354,12 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isI
   const gatedRecs = recommendations.slice(3);
 
   const toggleBtnStyle = {
-    display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px',
-    borderRadius: theme.radii.lg, border: '1px solid ' + theme.colors.borderMedium,
-    background: theme.colors.surface, color: theme.colors.textTertiary,
-    fontSize: theme.typography.sizes.sm, fontWeight: theme.typography.weights.semibold,
+    display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 0',
+    borderRadius: 0, border: 'none',
+    background: 'none', color: theme.colors.textMuted,
+    fontSize: theme.typography.sizes.sm, fontWeight: theme.typography.weights.medium,
     cursor: 'pointer', fontFamily: 'inherit', transition: `all ${theme.transitions.fast}`,
-    marginBottom: 16,
+    marginBottom: 16, textDecoration: 'underline', textUnderlineOffset: '3px',
   };
 
   const renderCard = (rec, i) => (
@@ -456,8 +465,8 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isI
         <button
           onClick={() => setShowReadinessDetail(!showReadinessDetail)}
           style={toggleBtnStyle}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = theme.colors.primary; e.currentTarget.style.color = theme.colors.primaryDark; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = theme.colors.borderMedium; e.currentTarget.style.color = theme.colors.textTertiary; }}
+          onMouseEnter={e => { e.currentTarget.style.color = theme.colors.primaryDark; }}
+          onMouseLeave={e => { e.currentTarget.style.color = theme.colors.textMuted; }}
         >
           <span style={{
             transition: `transform ${theme.transitions.fast}`,
@@ -488,8 +497,8 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isI
         <button
           onClick={() => setShowGapAnalysis(!showGapAnalysis)}
           style={toggleBtnStyle}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = theme.colors.primary; e.currentTarget.style.color = theme.colors.primaryDark; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = theme.colors.borderMedium; e.currentTarget.style.color = theme.colors.textTertiary; }}
+          onMouseEnter={e => { e.currentTarget.style.color = theme.colors.primaryDark; }}
+          onMouseLeave={e => { e.currentTarget.style.color = theme.colors.textMuted; }}
         >
           <span style={{
             transition: `transform ${theme.transitions.fast}`,

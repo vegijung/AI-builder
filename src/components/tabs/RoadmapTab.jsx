@@ -226,7 +226,7 @@ export function RoadmapTab({ roadmap }) {
           Need help implementing these? <strong style={{ color: theme.colors.textSecondary }}>MMG can help you go from roadmap to reality.</strong>
         </span>
         <a
-          href={import.meta.env.VITE_BOOKING_URL || 'mailto:info@mmgmc.ch?subject=AI%20Roadmap%20Support'}
+          href={import.meta.env.VITE_BOOKING_URL || 'mailto:janis.locher@mmgmc.ch?subject=AI%20Roadmap%20Support'}
           target="_blank"
           rel="noopener noreferrer"
           style={{
