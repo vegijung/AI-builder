@@ -262,5 +262,6 @@ export function openHtmlReport(html) {
   if (w) {
     w.document.write(html);
     w.document.close();
+    w.onload = () => w.print();
   }
 }

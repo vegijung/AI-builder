@@ -4,7 +4,6 @@ import { submitAssessmentLead } from '../../services/dataService';
 import { isSupabaseConfigured } from '../../services/supabase';
 import { INDUSTRIES, COMPANY_SIZES } from '../../data/constants';
 
-const BOOKING_URL = import.meta.env.VITE_BOOKING_URL || null;
 const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
 const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
 const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
@@ -50,7 +49,7 @@ const labelStyle = {
 export function LeadCaptureCard({
   selectedAreas, areaRatings, readinessRatings, overallScore, companyProfile,
   priorities, leadSubmitted, onLeadSubmitted,
-  recommendationCount, topUseCaseName, lowestDimension, onDownloadReport,
+  recommendationCount, topUseCaseName, lowestDimension,
 }) {
   const [form, setForm] = useState({
     name: '', email: '', company: '',
@@ -93,55 +92,9 @@ export function LeadCaptureCard({
     }
   };
 
-  const bookingHref = BOOKING_URL || 'mailto:janis.locher@mmgmc.ch?subject=AI%20Assessment%20Follow-up';
   const recCount = recommendationCount || 0;
 
-  if (leadSubmitted) {
-    return (
-      <div style={{
-        background: `linear-gradient(135deg, ${theme.colors.textPrimary}, #3a3530)`,
-        borderRadius: theme.radii.xl, padding: 28, marginBottom: 28,
-        boxShadow: theme.shadows.elevated, animation: 'fadeIn 0.3s ease-out',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-          <span style={{ fontSize: 24 }}>&#10003;</span>
-          <h3 style={{ margin: 0, fontSize: 18, fontWeight: theme.typography.weights.black, color: theme.colors.primary }}>
-            {recCount > 3 ? `All ${recCount} recommendations are now unlocked.` : 'Thank you for your interest!'}
-          </h3>
-        </div>
-        <p style={{ fontSize: theme.typography.sizes.xxl, color: '#ccc8c4', margin: '0 0 16px 0', lineHeight: 1.5 }}>
-          One of our AI consultants will review your assessment and reach out with personalized recommendations.
-        </p>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <a href={bookingHref} target="_blank" rel="noopener noreferrer" style={{
-            display: 'inline-block', padding: '12px 28px', borderRadius: theme.radii.xl,
-            background: theme.colors.primary, color: theme.colors.textPrimary,
-            fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold,
-            textDecoration: 'none', transition: `opacity ${theme.transitions.fast}`,
-          }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-          >
-            Book a Free 30-Min Session &rarr;
-          </a>
-          {onDownloadReport && (
-            <button onClick={onDownloadReport} style={{
-              padding: '12px 24px', borderRadius: theme.radii.xl,
-              border: '1px solid ' + theme.colors.primary + '60', background: 'transparent',
-              color: theme.colors.primary, fontSize: theme.typography.sizes.xxl,
-              fontWeight: theme.typography.weights.semibold, cursor: 'pointer', fontFamily: 'inherit',
-              transition: `all ${theme.transitions.fast}`,
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = theme.colors.primary + '15'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-            >
-              Download Report
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
+  if (leadSubmitted) return null;
 
   const headline = recCount > 3
     ? `We found ${recCount} AI opportunities for your organization`

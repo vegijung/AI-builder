@@ -195,8 +195,6 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isI
   const overallReadiness = getMaturityLevel(readinessScore);
   const freeRecs = recommendations.slice(0, 3);
   const gatedRecs = recommendations.slice(3);
-  const bookingUrl = import.meta.env.VITE_BOOKING_URL || 'mailto:janis.locher@mmgmc.ch?subject=AI%20Strategy%20Session';
-
   const handleDownloadReport = useCallback(() => {
     const recsWithWhy = recommendations.map(r => ({
       ...r,
@@ -252,108 +250,68 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isI
         </a>
       </div>
 
-      {/* Action bar */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: 10, marginBottom: 20, flexWrap: 'wrap',
-      }}>
-        {leadSubmitted ? (
-          <>
-            <button onClick={handleDownloadReport} style={{
-              padding: '10px 22px', borderRadius: theme.radii.xl,
-              border: '1px solid ' + theme.colors.border, background: theme.colors.surface,
-              color: theme.colors.textPrimary, fontSize: theme.typography.sizes.lg,
-              fontWeight: theme.typography.weights.bold, cursor: 'pointer', fontFamily: 'inherit',
-              display: 'flex', alignItems: 'center', gap: 6,
-              transition: `all ${theme.transitions.fast}`,
-            }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = theme.colors.primary; e.currentTarget.style.color = theme.colors.primary; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = theme.colors.border; e.currentTarget.style.color = theme.colors.textPrimary; }}
-            >
-              <span style={{ fontSize: 16 }}>&#128196;</span> Download Report
-            </button>
-            <a href={bookingUrl} target="_blank" rel="noopener noreferrer" style={{
-              padding: '10px 22px', borderRadius: theme.radii.xl, border: 'none',
-              background: theme.colors.primary, color: theme.colors.textPrimary,
-              fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.bold,
-              textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6,
-              transition: `opacity ${theme.transitions.fast}`,
-            }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-            >
-              Book a Free Session &rarr;
-            </a>
-          </>
-        ) : (
-          <div style={{
-            fontSize: theme.typography.sizes.base, color: theme.colors.textMuted,
-            fontStyle: 'italic',
-          }}>
-            Submit your details below to download the full report and book a session.
-          </div>
-        )}
-      </div>
-
-      {/* Top 3 recommendations -- always visible */}
+      {/* Recommendations */}
       <SectionLabel>Your Top Recommendations</SectionLabel>
       <p style={{ fontSize: theme.typography.sizes.lg, color: theme.colors.textTertiary, marginBottom: 12, marginTop: 0 }}>
         Use cases best matched to your maturity, readiness, and goals. Click any card for details.
       </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 24 }}>
-        {freeRecs.map((rec, i) => renderCard(rec, i))}
-      </div>
 
-      {/* Lead capture gate */}
-      <LeadCaptureCard
-        selectedAreas={selectedAreas || Object.keys(areaRatings)}
-        areaRatings={areaRatings}
-        readinessRatings={readinessRatings}
-        overallScore={readinessScore}
-        companyProfile={companyProfile}
-        priorities={priorities}
-        leadSubmitted={leadSubmitted}
-        onLeadSubmitted={onLeadSubmitted}
-        recommendationCount={recommendations.length}
-        topUseCaseName={recommendations[0]?.useCase?.name}
-        lowestDimension={lowestDimension}
-        onDownloadReport={handleDownloadReport}
-      />
+      {leadSubmitted ? (
+        /* All recommendations as a flat list after lead submission */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 24 }}>
+          {recommendations.map((rec, i) => renderCard(rec, i))}
+        </div>
+      ) : (
+        <>
+          {/* Top 3 visible */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 24 }}>
+            {freeRecs.map((rec, i) => renderCard(rec, i))}
+          </div>
 
-      {/* Remaining recommendations -- gated or unlocked */}
-      {gatedRecs.length > 0 && (
-        <div style={{ position: 'relative', marginBottom: 24 }}>
-          {!leadSubmitted && (
-            <div style={{
-              position: 'absolute', inset: 0, zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(253,252,250,0.3)', borderRadius: theme.radii.xl,
-            }}>
+          {/* Lead capture gate */}
+          <LeadCaptureCard
+            selectedAreas={selectedAreas || Object.keys(areaRatings)}
+            areaRatings={areaRatings}
+            readinessRatings={readinessRatings}
+            overallScore={readinessScore}
+            companyProfile={companyProfile}
+            priorities={priorities}
+            leadSubmitted={leadSubmitted}
+            onLeadSubmitted={onLeadSubmitted}
+            recommendationCount={recommendations.length}
+            topUseCaseName={recommendations[0]?.useCase?.name}
+            lowestDimension={lowestDimension}
+          />
+
+          {/* Remaining recommendations -- gated */}
+          {gatedRecs.length > 0 && (
+            <div style={{ position: 'relative', marginBottom: 24 }}>
               <div style={{
-                background: theme.colors.surface, border: '1px solid ' + theme.colors.border,
-                borderRadius: theme.radii.xl, padding: isMobile ? '14px 16px' : '16px 24px', boxShadow: theme.shadows.elevated,
-                textAlign: 'center', maxWidth: isMobile ? 280 : 340,
+                position: 'absolute', inset: 0, zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(253,252,250,0.3)', borderRadius: theme.radii.xl,
               }}>
-                <div style={{ fontSize: isMobile ? 20 : 24, marginBottom: 6 }}>&#128274;</div>
-                <div style={{ fontSize: isMobile ? theme.typography.sizes.lg : theme.typography.sizes.xl, fontWeight: theme.typography.weights.bold, color: theme.colors.textPrimary, marginBottom: 4 }}>
-                  {gatedRecs.length} more recommendations
+                <div style={{
+                  background: theme.colors.surface, border: '1px solid ' + theme.colors.border,
+                  borderRadius: theme.radii.xl, padding: isMobile ? '14px 16px' : '16px 24px', boxShadow: theme.shadows.elevated,
+                  textAlign: 'center', maxWidth: isMobile ? 280 : 340,
+                }}>
+                  <div style={{ fontSize: isMobile ? 20 : 24, marginBottom: 6 }}>&#128274;</div>
+                  <div style={{ fontSize: isMobile ? theme.typography.sizes.lg : theme.typography.sizes.xl, fontWeight: theme.typography.weights.bold, color: theme.colors.textPrimary, marginBottom: 4 }}>
+                    {gatedRecs.length} more recommendations
+                  </div>
+                  <div style={{ fontSize: isMobile ? theme.typography.sizes.base : theme.typography.sizes.lg, color: theme.colors.textMuted }}>
+                    Leave your details above to unlock all results.
+                  </div>
                 </div>
-                <div style={{ fontSize: isMobile ? theme.typography.sizes.base : theme.typography.sizes.lg, color: theme.colors.textMuted }}>
-                  Leave your details above to unlock all results.
+              </div>
+              <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {gatedRecs.map((rec, i) => renderCard(rec, i + 3))}
                 </div>
               </div>
             </div>
           )}
-          <div style={{
-            filter: leadSubmitted ? 'none' : 'blur(6px)',
-            pointerEvents: leadSubmitted ? 'auto' : 'none',
-            userSelect: leadSubmitted ? 'auto' : 'none',
-            transition: 'filter 0.3s ease',
-          }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {gatedRecs.map((rec, i) => renderCard(rec, i + 3))}
-            </div>
-          </div>
-        </div>
+        </>
       )}
 
       {/* Next steps -- shown after lead capture */}
