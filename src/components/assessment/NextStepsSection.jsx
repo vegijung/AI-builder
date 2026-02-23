@@ -3,7 +3,7 @@ import { theme } from '../../styles/theme';
 
 const BOOKING_URL = import.meta.env.VITE_BOOKING_URL || null;
 
-export function NextStepsSection({ isMobile }) {
+export function NextStepsSection({ isMobile, onDownloadReport }) {
   const url = BOOKING_URL || 'mailto:janis.locher@mmgmc.ch?subject=AI%20Strategy%20Session';
   const steps = MMG_EXPERTISE.nextSteps;
   const stats = MMG_EXPERTISE.stats;
@@ -45,17 +45,34 @@ export function NextStepsSection({ isMobile }) {
         ))}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-        <a href={url} target="_blank" rel="noopener noreferrer" style={{
-          display: 'inline-block', padding: '12px 28px', borderRadius: theme.radii.xl,
-          background: theme.colors.primary, color: theme.colors.textPrimary,
-          fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.bold,
-          textDecoration: 'none', transition: `opacity ${theme.transitions.fast}`,
-        }}
-          onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
-          onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-        >
-          Book a Free Session &rarr;
-        </a>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <a href={url} target="_blank" rel="noopener noreferrer" style={{
+            display: 'inline-block', padding: '12px 28px', borderRadius: theme.radii.xl,
+            background: theme.colors.primary, color: theme.colors.textPrimary,
+            fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.bold,
+            textDecoration: 'none', transition: `opacity ${theme.transitions.fast}`,
+          }}
+            onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+          >
+            Book a Free Session &rarr;
+          </a>
+          {onDownloadReport && (
+            <button onClick={onDownloadReport} style={{
+              padding: '12px 24px', borderRadius: theme.radii.xl,
+              border: '1px solid ' + theme.colors.primary + '50', background: 'transparent',
+              color: theme.colors.primary, fontSize: theme.typography.sizes.xl,
+              fontWeight: theme.typography.weights.semibold, cursor: 'pointer', fontFamily: 'inherit',
+              display: 'flex', alignItems: 'center', gap: 6,
+              transition: `all ${theme.transitions.fast}`,
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = theme.colors.primary + '15'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+            >
+              <span style={{ fontSize: 14 }}>&#128196;</span> Download Report
+            </button>
+          )}
+        </div>
         <div style={{ fontSize: theme.typography.sizes.base, color: '#8a8580' }}>
           Trusted across {stats.industries} industries &middot; {stats.engagements} AI engagements delivered &middot; Avg. {stats.avgTimeToValue} to value
         </div>

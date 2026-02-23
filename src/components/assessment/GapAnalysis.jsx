@@ -195,6 +195,20 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isI
   const overallReadiness = getMaturityLevel(readinessScore);
   const freeRecs = recommendations.slice(0, 3);
   const gatedRecs = recommendations.slice(3);
+  const bookingUrl = import.meta.env.VITE_BOOKING_URL || 'mailto:janis.locher@mmgmc.ch?subject=AI%20Strategy%20Session';
+
+  const handleDownloadReport = useCallback(() => {
+    const recsWithWhy = recommendations.map(r => ({
+      ...r,
+      whyText: generateWhyText(r, readinessScore, areaRatings, priorities),
+    }));
+    openHtmlReport(generateAssessmentHtml({
+      companyProfile,
+      executiveSummary: aiSummary || execSummary.map(s => `${s.title}: ${s.text}`).join('\n\n'),
+      recommendations: recsWithWhy,
+      dimensionScores, readinessScore, areaRatings, valueChainShortLabels,
+    }));
+  }, [recommendations, readinessScore, areaRatings, priorities, companyProfile, aiSummary, execSummary, dimensionScores, valueChainShortLabels]);
 
   const toggleBtnStyle = {
     display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 0',
@@ -238,6 +252,49 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isI
         </a>
       </div>
 
+      {/* Action bar */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: 10, marginBottom: 20, flexWrap: 'wrap',
+      }}>
+        {leadSubmitted ? (
+          <>
+            <button onClick={handleDownloadReport} style={{
+              padding: '10px 22px', borderRadius: theme.radii.xl,
+              border: '1px solid ' + theme.colors.border, background: theme.colors.surface,
+              color: theme.colors.textPrimary, fontSize: theme.typography.sizes.lg,
+              fontWeight: theme.typography.weights.bold, cursor: 'pointer', fontFamily: 'inherit',
+              display: 'flex', alignItems: 'center', gap: 6,
+              transition: `all ${theme.transitions.fast}`,
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = theme.colors.primary; e.currentTarget.style.color = theme.colors.primary; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = theme.colors.border; e.currentTarget.style.color = theme.colors.textPrimary; }}
+            >
+              <span style={{ fontSize: 16 }}>&#128196;</span> Download Report
+            </button>
+            <a href={bookingUrl} target="_blank" rel="noopener noreferrer" style={{
+              padding: '10px 22px', borderRadius: theme.radii.xl, border: 'none',
+              background: theme.colors.primary, color: theme.colors.textPrimary,
+              fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.bold,
+              textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6,
+              transition: `opacity ${theme.transitions.fast}`,
+            }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+            >
+              Book a Free Session &rarr;
+            </a>
+          </>
+        ) : (
+          <div style={{
+            fontSize: theme.typography.sizes.base, color: theme.colors.textMuted,
+            fontStyle: 'italic',
+          }}>
+            Submit your details below to download the full report and book a session.
+          </div>
+        )}
+      </div>
+
       {/* Top 3 recommendations -- always visible */}
       <SectionLabel>Your Top Recommendations</SectionLabel>
       <p style={{ fontSize: theme.typography.sizes.lg, color: theme.colors.textTertiary, marginBottom: 12, marginTop: 0 }}>
@@ -260,22 +317,7 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isI
         recommendationCount={recommendations.length}
         topUseCaseName={recommendations[0]?.useCase?.name}
         lowestDimension={lowestDimension}
-        onDownloadReport={() => {
-          const recsWithWhy = recommendations.map(rec => ({
-            ...rec,
-            whyText: generateWhyText(rec, readinessScore, areaRatings, priorities),
-          }));
-          const html = generateAssessmentHtml({
-            companyProfile,
-            executiveSummary: aiSummary || execSummary.map(s => `${s.title}: ${s.text}`).join('\n\n'),
-            recommendations: recsWithWhy,
-            dimensionScores,
-            readinessScore,
-            areaRatings,
-            valueChainShortLabels,
-          });
-          openHtmlReport(html);
-        }}
+        onDownloadReport={handleDownloadReport}
       />
 
       {/* Remaining recommendations -- gated or unlocked */}
@@ -315,7 +357,7 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isI
       )}
 
       {/* Next steps -- shown after lead capture */}
-      {leadSubmitted && <NextStepsSection isMobile={isMobile} />}
+      {leadSubmitted && <NextStepsSection isMobile={isMobile} onDownloadReport={handleDownloadReport} />}
 
       {/* Collapsible: Readiness Overview */}
       <div style={{ marginTop: 28 }}>
