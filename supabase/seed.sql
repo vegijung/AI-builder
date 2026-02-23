@@ -1335,6 +1335,7 @@ CREATE TABLE IF NOT EXISTS assessment_leads (
   area_ratings      jsonb NOT NULL DEFAULT '{}',
   readiness_ratings jsonb NOT NULL DEFAULT '{}',
   overall_score     numeric(3,1) NOT NULL DEFAULT 0,
+  priorities        jsonb DEFAULT '[]',
   created_at        timestamptz NOT NULL DEFAULT now()
 );
 

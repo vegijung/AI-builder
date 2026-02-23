@@ -216,16 +216,15 @@ export async function submitAssessmentLead(lead) {
   };
   if (lead.priorities) row.priorities = lead.priorities;
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('assessment_leads')
-    .insert(row)
-    .select();
+    .insert(row);
 
   if (error) {
     console.error('Submit assessment lead failed:', error.message);
     throw new Error('Failed to submit. Please try again.');
   }
-  return data[0];
+  return true;
 }
 
 export async function fetchAssessmentLeads() {
