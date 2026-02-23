@@ -2,22 +2,20 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   computeGapAnalysis, computeReadinessScore, computeDimensionScores,
   getRecommendedUseCases, generateExecutiveSummary, getReadinessInterpretation,
-  getTrafficLight, getFitLabel, generateWhyText,
-  getImplementationComplexity, getDominantCategory,
+  getTrafficLight, generateWhyText,
 } from '../../utils/assessment';
 import { getMaturityLevel } from '../../utils/maturity';
 import { useData } from '../../contexts/DataContext';
 import { SectionLabel } from '../shared/SectionLabel';
-import { BuildingBlockTag } from '../shared/BuildingBlockTag';
 import { ReadinessRadar } from './ReadinessRadar';
 import { LeadCaptureCard } from './LeadCaptureCard';
+import { RecommendationCard } from './RecommendationCard';
+import { NextStepsSection } from './NextStepsSection';
 import { READINESS_DIMENSIONS, MMG_EXPERTISE } from '../../data/constants';
 import { fetchAISummary } from '../../services/aiService';
 import { AiBadge, AiSkeleton } from '../shared/AiBadge';
 import { generateAssessmentHtml, openHtmlReport } from '../../utils/exportHtml';
 import { theme } from '../../styles/theme';
-
-const BOOKING_URL = import.meta.env.VITE_BOOKING_URL || null;
 
 // ---------------------------------------------------------------------------
 // ExecutiveSummary
@@ -151,206 +149,6 @@ function ReadinessBreakdown({ readinessRatings, dimensionScores }) {
 }
 
 // ---------------------------------------------------------------------------
-// RecommendationCard (simplified)
-// ---------------------------------------------------------------------------
-function RecommendationCard({ rec, index, readinessScore, areaRatings, priorities, valueChainShortLabels, onAddToRoadmap, buildingBlockMap, isInRoadmap, dimensionScores }) {
-  const [expanded, setExpanded] = useState(false);
-  const [showBlocks, setShowBlocks] = useState(false);
-  const uc = rec.useCase;
-  const ml = getMaturityLevel(rec.maturity);
-  const fit = getFitLabel(rec.score);
-  const whyText = useMemo(() => generateWhyText(rec, readinessScore, areaRatings, priorities), [rec, readinessScore, areaRatings, priorities]);
-  const whyPreview = useMemo(() => {
-    if (!whyText) return '';
-    const firstSentence = whyText.split('. ')[0];
-    return firstSentence.length > 90 ? firstSentence.slice(0, 87) + '...' : firstSentence + '.';
-  }, [whyText]);
-  const complexity = useMemo(() => getImplementationComplexity(rec, dimensionScores), [rec, dimensionScores]);
-  const dominantCat = useMemo(() => getDominantCategory(uc, buildingBlockMap), [uc, buildingBlockMap]);
-  const mmgStrength = dominantCat ? MMG_EXPERTISE.categoryStrengths[dominantCat] : null;
-  const inRoadmap = isInRoadmap?.(uc.name);
-
-  return (
-    <div style={{
-      background: theme.colors.surface, border: '1px solid ' + theme.colors.border, borderRadius: theme.radii.xl,
-      borderLeft: '3px solid ' + ml.color, boxShadow: theme.shadows.card, overflow: 'hidden',
-      animation: 'fadeSlideIn 0.3s ease-out both', animationDelay: `${index * 40}ms`,
-      transition: `box-shadow ${theme.transitions.fast}, transform ${theme.transitions.fast}`,
-    }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = theme.shadows.cardHover; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = theme.shadows.card; e.currentTarget.style.transform = 'translateY(0)'; }}
-    >
-      <div
-        onClick={() => setExpanded(!expanded)}
-        style={{ padding: '12px 16px', cursor: 'pointer' }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
-            <span style={{
-              display: 'inline-flex', width: 22, height: 22, borderRadius: theme.radii.circle, background: theme.colors.primary + '20',
-              color: theme.colors.primary, fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.black,
-              alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              {index + 1}
-            </span>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: theme.typography.weights.bold, fontSize: theme.typography.sizes.xl, color: theme.colors.textPrimary }}>{uc.name}</span>
-                <span style={{ fontSize: theme.typography.sizes.sm, color: theme.colors.textMuted }}>{valueChainShortLabels[uc.valueChainArea]}</span>
-              </div>
-              <div style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textMuted, marginTop: 2, lineHeight: 1.4 }}>
-                {whyPreview}
-              </div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            <span style={{ fontSize: theme.typography.sizes.sm, fontWeight: theme.typography.weights.bold, color: fit.color, whiteSpace: 'nowrap' }}>
-              {fit.label}
-            </span>
-            {onAddToRoadmap && (
-              <button
-                onClick={(e) => { e.stopPropagation(); if (!inRoadmap) onAddToRoadmap(uc); }}
-                disabled={inRoadmap}
-                style={{
-                  padding: '6px 12px', borderRadius: theme.radii.lg,
-                  border: '1px solid ' + (inRoadmap ? theme.colors.activityPrimary : theme.colors.borderMedium),
-                  background: inRoadmap ? theme.colors.activityPrimary + '15' : theme.colors.surface,
-                  color: inRoadmap ? theme.colors.activityPrimary : theme.colors.textTertiary,
-                  fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.semibold,
-                  cursor: inRoadmap ? 'default' : 'pointer', fontFamily: 'inherit',
-                  transition: `all ${theme.transitions.fast}`,
-                }}
-                onMouseEnter={e => { if (!inRoadmap) { e.currentTarget.style.background = theme.colors.primary; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = theme.colors.primary; } }}
-                onMouseLeave={e => { if (!inRoadmap) { e.currentTarget.style.background = theme.colors.surface; e.currentTarget.style.color = theme.colors.textTertiary; e.currentTarget.style.borderColor = theme.colors.borderMedium; } }}
-              >
-                {inRoadmap ? '\u2713 In Roadmap' : '+ Roadmap'}
-              </button>
-            )}
-            <span style={{
-              fontSize: theme.typography.sizes.lg, color: theme.colors.textMuted,
-              transition: `transform ${theme.transitions.fast}`, transform: expanded ? 'rotate(180deg)' : 'rotate(0)',
-            }}>
-              &#9660;
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {expanded && (
-        <div style={{ padding: '0 16px 16px', borderTop: '1px solid ' + theme.colors.borderLight, animation: 'fadeIn 0.2s ease-out' }}>
-          <div style={{
-            background: theme.colors.surfaceAlt, borderRadius: theme.radii.lg, padding: 12, marginTop: 12,
-            border: '1px solid ' + theme.colors.borderLight,
-          }}>
-            <div style={{ fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.bold, color: theme.colors.textPrimary, marginBottom: 4 }}>
-              Why This Fits You
-            </div>
-            <p style={{ margin: 0, fontSize: theme.typography.sizes.lg, color: theme.colors.textTertiary, lineHeight: 1.6 }}>
-              {whyText}
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{
-                width: 8, height: 8, borderRadius: theme.radii.circle, background: complexity.color, flexShrink: 0,
-              }} />
-              <span style={{ fontSize: theme.typography.sizes.base, fontWeight: theme.typography.weights.semibold, color: complexity.color }}>
-                {complexity.level} Complexity
-              </span>
-              <span style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textMuted }}>
-                &mdash; {complexity.hint}
-              </span>
-            </div>
-            {mmgStrength && (
-              <div style={{ fontSize: theme.typography.sizes.base, color: theme.colors.textMuted, lineHeight: 1.4, paddingLeft: 16 }}>
-                <span style={{ fontWeight: theme.typography.weights.bold, color: theme.colors.primary }}>MMG</span>{' '}
-                {mmgStrength}
-              </div>
-            )}
-          </div>
-
-          <button
-            onClick={(e) => { e.stopPropagation(); setShowBlocks(!showBlocks); }}
-            style={{
-              background: 'none', border: 'none', padding: '8px 0 0 0',
-              color: theme.colors.textMuted, fontSize: theme.typography.sizes.base,
-              cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline',
-              display: 'flex', alignItems: 'center', gap: 4,
-            }}
-          >
-            {showBlocks ? 'Hide' : 'Show'} building blocks ({(uc.buildingBlocks || []).length})
-          </button>
-          {showBlocks && (
-            <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 5, animation: 'fadeIn 0.2s ease-out' }}>
-              {(uc.buildingBlocks || []).map(bName => (
-                <BuildingBlockTag key={bName} name={bName} showScore />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// NextStepsSection (shown after lead capture)
-// ---------------------------------------------------------------------------
-function NextStepsSection() {
-  const url = BOOKING_URL || 'mailto:janis.locher@mmgmc.ch?subject=AI%20Strategy%20Session';
-  const steps = MMG_EXPERTISE.nextSteps;
-  const stats = MMG_EXPERTISE.stats;
-  return (
-    <div style={{
-      background: `linear-gradient(135deg, ${theme.colors.textPrimary}, #3a3530)`,
-      borderRadius: theme.radii.xl, padding: '24px 28px', marginTop: 24,
-      boxShadow: theme.shadows.elevated, animation: 'fadeIn 0.3s ease-out',
-    }}>
-      <div style={{ fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.black, color: theme.colors.primary, marginBottom: 16 }}>
-        What Happens Next
-      </div>
-      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 20 }}>
-        {steps.map((step, i) => (
-          <div key={i} style={{ flex: '1 1 180px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-            <span style={{
-              display: 'inline-flex', width: 28, height: 28, borderRadius: theme.radii.circle, flexShrink: 0,
-              background: theme.colors.primary + '25', color: theme.colors.primary,
-              fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.black,
-              alignItems: 'center', justifyContent: 'center',
-            }}>{i + 1}</span>
-            <div>
-              <div style={{ fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.bold, color: '#fff', marginBottom: 2 }}>
-                {step.title}
-              </div>
-              <div style={{ fontSize: theme.typography.sizes.lg, color: '#b0aca8', lineHeight: 1.4 }}>
-                {step.description}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-        <a href={url} target="_blank" rel="noopener noreferrer" style={{
-          display: 'inline-block', padding: '12px 28px', borderRadius: theme.radii.xl,
-          background: theme.colors.primary, color: theme.colors.textPrimary,
-          fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.bold,
-          textDecoration: 'none', transition: `opacity ${theme.transitions.fast}`,
-        }}
-          onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
-          onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-        >
-          Book a Free Session &rarr;
-        </a>
-        <div style={{ fontSize: theme.typography.sizes.base, color: '#8a8580' }}>
-          Trusted across {stats.industries} industries &middot; {stats.engagements} AI engagements delivered &middot; Avg. {stats.avgTimeToValue} to value
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // GapAnalysis (main export)
 // ---------------------------------------------------------------------------
 export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isInRoadmap, isMobile, selectedAreas, priorities, companyProfile, leadSubmitted, onLeadSubmitted }) {
@@ -420,6 +218,7 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isI
       buildingBlockMap={buildingBlockMap}
       isInRoadmap={isInRoadmap}
       dimensionScores={dimensionScores}
+      isMobile={isMobile}
     />
   );
 
@@ -428,7 +227,7 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isI
       <ExecutiveSummary items={execSummary} aiSummary={aiSummary} aiLoading={aiSummaryLoading} onRegenerate={loadAISummary} />
 
       <div style={{
-        textAlign: 'center', padding: '6px 0 14px', fontSize: theme.typography.sizes.sm,
+        textAlign: 'center', padding: isMobile ? '4px 8px 10px' : '6px 0 14px', fontSize: theme.typography.sizes.sm,
         color: theme.colors.textDisabled, letterSpacing: 0.3,
       }}>
         Built by <strong style={{ color: theme.colors.textMuted }}>MMG Management Consulting</strong> &mdash; {MMG_EXPERTISE.stats.engagements} AI engagements across {MMG_EXPERTISE.stats.industries} industries.{' '}
@@ -489,14 +288,14 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isI
             }}>
               <div style={{
                 background: theme.colors.surface, border: '1px solid ' + theme.colors.border,
-                borderRadius: theme.radii.xl, padding: '16px 24px', boxShadow: theme.shadows.elevated,
-                textAlign: 'center', maxWidth: 340,
+                borderRadius: theme.radii.xl, padding: isMobile ? '14px 16px' : '16px 24px', boxShadow: theme.shadows.elevated,
+                textAlign: 'center', maxWidth: isMobile ? 280 : 340,
               }}>
-                <div style={{ fontSize: 24, marginBottom: 6 }}>&#128274;</div>
-                <div style={{ fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.bold, color: theme.colors.textPrimary, marginBottom: 4 }}>
+                <div style={{ fontSize: isMobile ? 20 : 24, marginBottom: 6 }}>&#128274;</div>
+                <div style={{ fontSize: isMobile ? theme.typography.sizes.lg : theme.typography.sizes.xl, fontWeight: theme.typography.weights.bold, color: theme.colors.textPrimary, marginBottom: 4 }}>
                   {gatedRecs.length} more recommendations
                 </div>
-                <div style={{ fontSize: theme.typography.sizes.lg, color: theme.colors.textMuted }}>
+                <div style={{ fontSize: isMobile ? theme.typography.sizes.base : theme.typography.sizes.lg, color: theme.colors.textMuted }}>
                   Leave your details above to unlock all results.
                 </div>
               </div>
@@ -516,7 +315,7 @@ export function GapAnalysis({ areaRatings, readinessRatings, onAddToRoadmap, isI
       )}
 
       {/* Next steps -- shown after lead capture */}
-      {leadSubmitted && <NextStepsSection />}
+      {leadSubmitted && <NextStepsSection isMobile={isMobile} />}
 
       {/* Collapsible: Readiness Overview */}
       <div style={{ marginTop: 28 }}>
